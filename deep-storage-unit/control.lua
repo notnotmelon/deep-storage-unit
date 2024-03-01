@@ -6,6 +6,8 @@ local update_slots = shared.update_slots
 local compactify = shared.compactify
 local validity_check = shared.validity_check
 
+--- Generates global units table
+--- blacklists memory unit for picker dollies
 local function setup()
 	global.units = global.units or {}
 	
@@ -14,12 +16,13 @@ local function setup()
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit-combinator', true)
 	end
 end
-
 script.on_init(setup)
+
+--- Reloads units on config change, saves units with broken items
 script.on_configuration_changed(function()
 	setup()
-                               
 	for unit_number, unit_data in pairs(global.units) do
+---@diagnostic disable-next-line: missing-parameter
 		if unit_data.item and not validity_check(unit_number, unit_data) then
 			local prototype = game.item_prototypes[unit_data.item]
 			if prototype then
@@ -32,6 +35,9 @@ script.on_configuration_changed(function()
 	end
 end)
 
+--- updates the circuit, display text and power usage
+---@param unit_data table
+---@param inventory_count number
 local function update_unit_exterior(unit_data, inventory_count)
 	local entity = unit_data.entity
 	unit_data.previous_inventory_count = inventory_count
@@ -42,6 +48,8 @@ local function update_unit_exterior(unit_data, inventory_count)
 	shared.update_power_usage(unit_data, total_count)
 end
 
+--- sets the filters of the given unit, spills item stacks that do not match the item in the unit data
+--- @param unit_data table
 function set_filter(unit_data)
 	local inventory = unit_data.inventory
 	local item = unit_data.item
@@ -56,6 +64,9 @@ function set_filter(unit_data)
 	end
 end
 
+---initializes empty units with an item type
+---@param unit_data table
+---@return boolean
 local function detect_item(unit_data)
 	local inventory = unit_data.inventory
 	for name, count in pairs(inventory.get_contents()) do

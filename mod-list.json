@@ -5,16 +5,12 @@
       "enabled": true
     },
     {
-      "name": "coverage",
-      "enabled": false
-    },
-    {
-      "name": "profiler",
-      "enabled": false
-    },
-    {
       "name": "debugadapter",
       "enabled": false
+    },
+    {
+      "name": "deep-storage-unit",
+      "enabled": true
     }
   ]
 }

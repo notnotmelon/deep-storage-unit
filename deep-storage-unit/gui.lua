@@ -81,6 +81,7 @@ script.on_nth_tick(2, function(event)
 	end
 end)
 
+--- Destroys GUI when the player changes surface
 script.on_event(defines.events.on_player_changed_surface, function(event)
 	local player = game.get_player(event.player_index)
 	if player.opened_gui_type == defines.gui_type.item then
@@ -89,6 +90,7 @@ script.on_event(defines.events.on_player_changed_surface, function(event)
 	end
 end)
 
+--- Creates the GUI on click
 script.on_event(defines.events.on_gui_opened, function(event)                
 	if event.gui_type ~= defines.gui_type.entity or not event.entity or event.entity.name ~= 'memory-unit' then return end
 	
