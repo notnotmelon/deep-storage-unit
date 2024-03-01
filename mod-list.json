@@ -1,0 +1,20 @@
+{
+  "mods": [
+    {
+      "name": "base",
+      "enabled": true
+    },
+    {
+      "name": "coverage",
+      "enabled": false
+    },
+    {
+      "name": "profiler",
+      "enabled": false
+    },
+    {
+      "name": "debugadapter",
+      "enabled": false
+    }
+  ]
+}
