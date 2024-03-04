@@ -63,11 +63,22 @@ end
 ---@param combinator LuaEntity
 ---@param signal SignalID
 ---@param count number
-local function update_combinator(combinator, signal, count)
----@diagnostic disable-next-line: undefined-field
-	combinator.get_or_create_control_behavior().set_signal(1, {
+---@param power_usage? number
+local function update_combinator(combinator, signal, count, power_usage)
+	---@type LuaConstantCombinatorControlBehavior
+	---@diagnostic disable-next-line: assign-type-mismatch
+	local behavior = combinator.get_or_create_control_behavior()
+
+	behavior.set_signal(1, {
 		signal = signal,
 		count = min(2147483647, count)
+	})
+
+	if power_usage == nil then return end
+
+	behavior.set_signal(2, {
+		signal = {type="virtual",name="signal-E"},
+		count = min(2147483647, math.ceil(power_usage * 60 / 1000000))
 	})
 end
 
@@ -92,6 +103,7 @@ local function update_power_usage(unit_data, count)
 	power_usage = power_usage + base_usage
 	powersource.power_usage = power_usage
 	powersource.electric_buffer_size = power_usage
+	return power_usage
 end
 
 local update_rate = 15

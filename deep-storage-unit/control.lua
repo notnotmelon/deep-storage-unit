@@ -43,9 +43,9 @@ local function update_unit_exterior(unit_data, inventory_count)
 	unit_data.previous_inventory_count = inventory_count
 	local total_count = unit_data.count + inventory_count
 
-	shared.update_combinator(unit_data.combinator, {type = 'item', name = unit_data.item}, total_count)
+	local power_draw = shared.update_power_usage(unit_data, total_count)
+	shared.update_combinator(unit_data.combinator, {type = 'item', name = unit_data.item}, total_count,power_draw)
 	shared.update_display_text(unit_data, entity, compactify(total_count))
-	shared.update_power_usage(unit_data, total_count)
 end
 
 --- sets the filters of the given unit, spills item stacks that do not match the item in the unit data

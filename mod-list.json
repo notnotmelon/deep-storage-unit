@@ -6,11 +6,20 @@
     },
     {
       "name": "debugadapter",
-      "enabled": false
+      "enabled": true,
+      "version": "1.1.41"
     },
     {
       "name": "deep-storage-unit",
       "enabled": true
+    },
+    {
+      "name": "coverage",
+      "enabled": false
+    },
+    {
+      "name": "profiler",
+      "enabled": false
     }
   ]
 }

@@ -164,7 +164,7 @@ data:extend{
 		icon = '__deep-storage-unit__/graphics/icon/memory-unit.png',
 		icon_size = 64,
 		icon_mipmaps = 4,
-		item_slot_count = 1,
+		item_slot_count = 2,
 		name = 'memory-unit-combinator',
 		type = 'constant-combinator',
 		collision_mask = {},
