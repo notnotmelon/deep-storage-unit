@@ -106,6 +106,7 @@ local function update_power_usage(unit_data, count)
 	return power_usage
 end
 
+--- update rate in ticks
 local update_rate = 15
 local update_slots = 4
 

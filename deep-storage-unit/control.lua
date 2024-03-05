@@ -12,6 +12,7 @@ local validity_check = shared.validity_check
 local update_nearby_storages
 local update_storage_effects
 local pad_area
+local beacon_prototypes
 --#endregion
 
 --- Generates global units table
@@ -100,14 +101,20 @@ function update_unit(unit_data, unit_number, force)
 
 	local changed = false
 
+	
 	if unit_data.item == nil then changed = detect_item(unit_data) end
 	local item = unit_data.item
 	if item == nil then return end
 	local comfortable = unit_data.comfortable
+	
+	
+	--- set i/o cap, 30/s for tier 0, additional 30/s for each speed module
+	update_storage_effects(unit_data)
+	local max_conversion_speed = unit_data.max_conversion_speed
 
 	local inventory_count = inventory.get_item_count(item)
 	if inventory_count > comfortable then
-		local amount_removed = inventory.remove { name = item, count = inventory_count - comfortable }
+		local amount_removed = inventory.remove { name = item, count = math.min(inventory_count - comfortable,max_conversion_speed) }
 		unit_data.count = unit_data.count + amount_removed
 		inventory_count = inventory_count - amount_removed
 		changed = true
@@ -115,7 +122,7 @@ function update_unit(unit_data, unit_number, force)
 		if unit_data.previous_inventory_count ~= inventory_count then
 			changed = true
 		end
-		local to_add = comfortable - inventory_count
+		local to_add = math.min(comfortable - inventory_count,max_conversion_speed)
 		if unit_data.count < to_add then
 			to_add = unit_data.count
 		end
@@ -126,7 +133,6 @@ function update_unit(unit_data, unit_number, force)
 		end
 	end
 
-	update_storage_effects(unit_data.entity)
 
 	if force or changed then
 		inventory.sort_and_merge()
@@ -322,14 +328,17 @@ function update_nearby_storages(beacon_entity)
 	game.print(#affected_memory_units)
 end
 
-function update_storage_effects(entity)
+function update_storage_effects(unit_data)
+	local unit = unit_data.entity
 	local effects = {
 		speed = 0,
 		energy = 0,
 	}
 
-	for name, data in pairs(game.get_filtered_entity_prototypes { { filter = "type", type = "beacon" } }) do
-		local beacons = entity.surface.find_entities_filtered { area = pad_area(entity.bounding_box, game.entity_prototypes[name].supply_area_distance), name = name }
+	if not beacon_prototypes then beacon_prototypes = game.get_filtered_entity_prototypes { { filter = "type", type = "beacon" } } end
+
+	for name, data in pairs(beacon_prototypes) do
+		local beacons = unit.surface.find_entities_filtered { area = pad_area(unit.bounding_box, game.entity_prototypes[name].supply_area_distance), name = name }
 		
 		for _,beacon in pairs(beacons) do
 			if beacon.effects then
@@ -340,8 +349,7 @@ function update_storage_effects(entity)
 		end
 	end
 
-	game.print(effects.energy)
-	game.print(effects.speed)
+	unit_data.max_conversion_speed = (unit_data.effects.speed * 4 + 1) * (update_rate * update_slots) * 0.5
 end
 
 ---pad an area by a given amount
