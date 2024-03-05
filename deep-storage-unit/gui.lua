@@ -9,7 +9,7 @@ end
 local function update_gui(gui, fresh_gui)
 	local unit_data = global.units[gui.tags.unit_number]
 	if not unit_data then gui.destroy() return end
-	local content_flow = gui.content_frame.content_flow
+	local content_flow = gui.main_flow.content_frame.content_flow
 	local entity = unit_data.entity
 	local powersource = unit_data.powersource
 	
@@ -22,8 +22,8 @@ local function update_gui(gui, fresh_gui)
 	if unit_data.item then
 		inventory_count = inventory.get_item_count(unit_data.item)
 		if fresh_gui or not deconstructed then
-			content_flow.storage_flow.content_sprite.sprite = 'item/' .. unit_data.item
-			content_flow.storage_flow.current_storage.caption = {
+			content_flow.storage_flow.info_flow.content_sprite.sprite = 'item/' .. unit_data.item
+			content_flow.storage_flow.info_flow.current_storage.caption = {
 				'',
 				{'', '[font=default-semibold][color=255,230,192]', game.item_prototypes[unit_data.item].localised_name},
 				{'', ':[/color][/font] ', compactify(count + inventory_count)}
@@ -32,8 +32,8 @@ local function update_gui(gui, fresh_gui)
 	end
 	local visible = not not unit_data.item
 	content_flow.storage_flow.visible = visible
-	content_flow.storage_seperator.visible = visible
-	content_flow.io_flow.visible = visible
+	--content_flow.storage_seperator.visible = visible
+	--content_flow.io_flow.visible = visible
 	content_flow.no_input_item.visible = not visible
 	
 	content_flow.electric_flow.electricity.value = powersource.energy / powersource.electric_buffer_size
@@ -94,10 +94,12 @@ end)
 script.on_event(defines.events.on_gui_opened, function(event)                
 	if event.gui_type ~= defines.gui_type.entity or not event.entity or event.entity.name ~= 'memory-unit' then return end
 	
+	---@type LuaPlayer
+	---@diagnostic disable-next-line: assign-type-mismatch
 	local player = game.get_player(event.player_index)
 	local entity = event.entity
 	shared.open_inventory(player)
-               
+
 	local main_frame = player.gui.relative.add{
 		type = 'frame', name = 'memory_unit_gui', caption = {'entity-name.memory-unit'}, direction = 'vertical',
 		anchor = {
@@ -107,8 +109,10 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	}
 	main_frame.style.width = 448
 	main_frame.tags = {unit_number = entity.unit_number}
-               
-	local content_frame = main_frame.add{type = 'frame', name = 'content_frame', direction = 'vertical', style = 'inside_shallow_frame_with_padding'}
+	local main_flow = main_frame.add{type="flow",name="main_flow",direction="vertical"}
+	main_flow.style.vertical_spacing = 12
+
+	local content_frame = main_flow.add{type = 'frame', name = 'content_frame', direction = 'vertical', style = 'inside_shallow_frame_with_padding'}
 	local content_flow = content_frame.add{type = 'flow', name = 'content_flow', direction = 'vertical'}
 	content_flow.style.vertical_spacing = 8
 	content_flow.style.margin = {-4, 0, -4, 0}
@@ -121,7 +125,7 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	electric_flow.style.bottom_margin = -32
 	electric_flow.add{type = 'label', name = 'consumption'}.style.right_margin = 4
 	electric_flow.add{type = 'progressbar', name = 'electricity', style = 'electric_satisfaction_progressbar'}.style.width = 150
-               
+
 	local status_flow = content_flow.add{type = 'flow', name = 'status_flow', direction = 'horizontal'}
 	status_flow.style.vertical_align = 'center'
 	status_flow.style.top_margin = 4
@@ -135,26 +139,73 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	entity_preview.visible = true
 	entity_preview.style.height = 155
 	
+
 	local storage_flow = content_flow.add{type = 'flow', name = 'storage_flow', direction = 'horizontal'}
 	storage_flow.style.vertical_align = 'center'
+	storage_flow.style.horizontal_spacing = 18
 	
-	local content_sprite = storage_flow.add{type = 'sprite', name = 'content_sprite'}
-	content_sprite.resize_to_sprite = false
-	content_sprite.style.size = {32, 32}
-	storage_flow.add{type = 'label', name = 'current_storage'}
-	content_flow.add{type = 'line', name = 'storage_seperator'}
-	
-	local io_flow = content_flow.add{type = 'flow', name = 'io_flow', direction = 'horizontal'}
+	local io_flow = storage_flow.add{type = 'flow', name = 'io_flow', direction = 'horizontal'}
 	storage_flow.style.vertical_align = 'center'         
 	local bulk_insert = io_flow.add{type = 'sprite-button', name = 'bulk_insert', style = 'inventory_slot', sprite = 'bulk-insert', tooltip = {'mod-gui.bulk-insert'}}
 	bulk_insert.tags = {unit_number = entity.unit_number}
 	local bulk_extract = io_flow.add{type = 'sprite-button', name = 'bulk_extract', style = 'inventory_slot', sprite = 'bulk-extract', tooltip = {'mod-gui.bulk-extract'}}
 	bulk_extract.tags = {unit_number = entity.unit_number}
 	
+	local info_flow = storage_flow.add{type='flow',name='info_flow',direction='horizontal'}
+	info_flow.style.horizontal_spacing = 6
+
+	local content_sprite = info_flow.add{type = 'sprite', name = 'content_sprite'}
+	content_sprite.resize_to_sprite = false
+	content_sprite.style.size = {32, 32}
+	info_flow.add{type = 'label', name = 'current_storage'}
+	--content_flow.add{type = 'line', name = 'storage_seperator'}
+	
+	
 	local no_input_item = content_flow.add{type = 'sprite-button', name = 'no_input_item', style = 'inventory_slot', tooltip = {'mod-gui.no-input-item'}}
 	no_input_item.tags = {unit_number = entity.unit_number}
-               
+
+	local memory_frame = main_flow.add{type = 'frame', name = 'memory_frame', direction = 'vertical', style = 'inside_shallow_frame'}
+	local memory_header = memory_frame.add{type="frame",name="memory_header", style = "negative_subheader_frame"}
+	memory_header.style.horizontally_stretchable = true
+	memory_header.add{type="label",name="memory_header_label",style="subheader_caption_label",caption="Data storage core",tooltip="The Data storage core determines the energy cost of items stored inside the memory unit."}
+
+	local memory_status_flow = memory_frame.add{type="flow",name="memory_status_flow",direction="horizontal"}
+	memory_status_flow.style.vertical_align = "center"
+	memory_status_flow.style.top_margin = 6
+	memory_status_flow.style.left_padding = 12
+	memory_status_flow.add{type="sprite",name="memory_status_sprite",sprite="utility/status_yellow"}
+	memory_status_flow.add{type="label",name="memory_status_label",caption="Suboptimal configuration"}
+
+	local memory_electricity_flow = memory_frame.add{type="flow",name="memory_status_electricity_flow"}
+	memory_electricity_flow.style.left_padding = 12
+	memory_electricity_flow.style.bottom_margin = 6
+	memory_electricity_flow.style.horizontally_stretchable = true
+	memory_electricity_flow.style.vertical_align = "center"
+	--memory_electricity_flow.style.horizontal_align = "right"
+	memory_electricity_flow.add{type="label",name="memory_label",caption="10GW/10GW"}.style.right_margin = 4
+	local memory_satisfaction_progressbar = memory_electricity_flow.add{type="progressbar",name="memory_electricity",style="electric_satisfaction_progressbar"}
+	memory_satisfaction_progressbar.value = 1
+	memory_satisfaction_progressbar.style.horizontal_align = "right"
+
+
+	local matter_conversion_frame = main_flow.add{type = 'frame', name = 'matter_conversion_frame', direction = 'vertical', style = 'inside_shallow_frame'}
+	local matter_conversion_header = matter_conversion_frame.add{type="frame",name="matter_conversion_header", style = "subheader_frame"}
+	matter_conversion_header.style.horizontally_stretchable = true
+	matter_conversion_header.add{type="label",name="matter_conversion_header_label",style="subheader_caption_label",caption="Matter conversion core",tooltip="The Matter conversion core limts the rate at which items can be inserted or extracted."}
+
+	local matter_conversion_status_flow = matter_conversion_frame.add{type="flow",name="matter_conversion_status_flow",direction="horizontal"}
+	matter_conversion_status_flow.style.vertical_align = "center"
+	matter_conversion_status_flow.style.top_margin = 6
+	matter_conversion_status_flow.style.left_padding = 12
+	matter_conversion_status_flow.add{type="sprite",name="matter_conversion_status_sprite",sprite="utility/status_working"}
+	matter_conversion_status_flow.add{type="label",name="matter_conversion_status_label",caption="Idle"}
+
+	local matter_conversion_info_flow = matter_conversion_frame.add{type="flow",name="matter_conversion_info_flow",direction="horizontal"}
+	matter_conversion_info_flow.style.left_padding = 12
+	matter_conversion_info_flow.style.bottom_margin = 6
+	matter_conversion_info_flow.add{type="label",name="matter_conversion_info_label",caption="Maximum conversion rate: [font=default-semibold][color=255,230,192]60 items/s[/color][/font]"}
 	update_gui(main_frame, true)
+	
 end)
 
 script.on_event(defines.events.on_gui_closed, function(event)
