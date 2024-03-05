@@ -1,4 +1,5 @@
 require 'gui'
+require 'util'
 
 local shared = require 'shared'
 local update_rate = shared.update_rate
@@ -6,11 +7,18 @@ local update_slots = shared.update_slots
 local compactify = shared.compactify
 local validity_check = shared.validity_check
 
+
+--#region Temp functions
+local update_nearby_storages
+local update_storage_effects
+local pad_area
+--#endregion
+
 --- Generates global units table
 --- blacklists memory unit for picker dollies
 local function setup()
 	global.units = global.units or {}
-	
+
 	if remote.interfaces['PickerDollies'] then
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit', true)
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit-combinator', true)
@@ -22,7 +30,7 @@ script.on_init(setup)
 script.on_configuration_changed(function()
 	setup()
 	for unit_number, unit_data in pairs(global.units) do
----@diagnostic disable-next-line: missing-parameter
+		---@diagnostic disable-next-line: missing-parameter
 		if unit_data.item and not validity_check(unit_number, unit_data) then
 			local prototype = game.item_prototypes[unit_data.item]
 			if prototype then
@@ -44,7 +52,7 @@ local function update_unit_exterior(unit_data, inventory_count)
 	local total_count = unit_data.count + inventory_count
 
 	local power_draw = shared.update_power_usage(unit_data, total_count)
-	shared.update_combinator(unit_data.combinator, {type = 'item', name = unit_data.item}, total_count,power_draw)
+	shared.update_combinator(unit_data.combinator, { type = 'item', name = unit_data.item }, total_count, power_draw)
 	shared.update_display_text(unit_data, entity, compactify(total_count))
 end
 
@@ -87,19 +95,19 @@ function update_unit(unit_data, unit_number, force)
 	local combinator = unit_data.combinator
 	local container = unit_data.container
 	local inventory = unit_data.inventory
-	
+
 	if validity_check(unit_number, unit_data, force) then return end
-	
+
 	local changed = false
-	
+
 	if unit_data.item == nil then changed = detect_item(unit_data) end
 	local item = unit_data.item
 	if item == nil then return end
 	local comfortable = unit_data.comfortable
-	
+
 	local inventory_count = inventory.get_item_count(item)
 	if inventory_count > comfortable then
-		local amount_removed = inventory.remove{name = item, count = inventory_count - comfortable}
+		local amount_removed = inventory.remove { name = item, count = inventory_count - comfortable }
 		unit_data.count = unit_data.count + amount_removed
 		inventory_count = inventory_count - amount_removed
 		changed = true
@@ -112,12 +120,14 @@ function update_unit(unit_data, unit_number, force)
 			to_add = unit_data.count
 		end
 		if to_add ~= 0 then
-			local amount_added = entity.insert{name = item, count = to_add}
+			local amount_added = entity.insert { name = item, count = to_add }
 			unit_data.count = unit_data.count - amount_added
 			inventory_count = inventory_count + amount_added
 		end
 	end
-	
+
+	update_storage_effects(unit_data.entity)
+
 	if force or changed then
 		inventory.sort_and_merge()
 		update_unit_exterior(unit_data, inventory_count)
@@ -126,7 +136,7 @@ end
 
 script.on_nth_tick(update_rate, function(event)
 	local smooth_ups = event.tick % update_slots
-	
+
 	for unit_number, unit_data in pairs(global.units) do
 		if unit_data.lag_id == smooth_ups then
 			update_unit(unit_data, unit_number)
@@ -144,21 +154,21 @@ local function on_created(event)
 	local surface = entity.surface
 	local force = entity.force
 
-	local combinator = surface.create_entity{
+	local combinator = surface.create_entity {
 		name = 'memory-unit-combinator',
-		position = {position.x + combinator_shift_x, position.y + combinator_shift_y},
+		position = { position.x + combinator_shift_x, position.y + combinator_shift_y },
 		force = force
 	}
 	combinator.operable = false
 	combinator.destructible = false
-	
-	local powersource = surface.create_entity{
+
+	local powersource = surface.create_entity {
 		name = 'memory-unit-powersource',
 		position = position,
 		force = force
 	}
 	powersource.destructible = false
-	
+
 	local unit_data = {
 		entity = entity,
 		count = 0,
@@ -192,36 +202,36 @@ script.on_event(defines.events.on_entity_cloned, function(event)
 	local entity = event.source
 	if entity.name ~= 'memory-unit' then return end
 	local destination = event.destination
-	
+
 	local unit_data = global.units[entity.unit_number]
 	local position = destination.position
 	local surface = destination.surface
-	
+
 	local powersource, combinator = unit_data.powersource, unit_data.combinator
-               
+
 	if powersource.valid then
-		powersource = powersource.clone{position = position, surface = surface}
+		powersource = powersource.clone { position = position, surface = surface }
 	else
-		powersource = surface.create_entity{
+		powersource = surface.create_entity {
 			name = 'memory-unit-powersource',
 			position = position,
 			force = force
 		}
 		powersource.destructible = false
 	end
-	
+
 	if combinator.valid then
-		combinator = combinator.clone{position = {position.x + combinator_shift_x, position.y + combinator_shift_y}, surface = surface}
+		combinator = combinator.clone { position = { position.x + combinator_shift_x, position.y + combinator_shift_y }, surface = surface }
 	else
-		combinator = surface.create_entity{
+		combinator = surface.create_entity {
 			name = 'memory-unit-combinator',
-			position = {position.x + combinator_shift_x, position.y + combinator_shift_y},
+			position = { position.x + combinator_shift_x, position.y + combinator_shift_y },
 			force = force
 		}
 		combinator.destructible = false
 		combinator.operable = false
 	end
-	
+
 	local item = unit_data.item
 	unit_data = {
 		powersource = powersource,
@@ -235,7 +245,7 @@ script.on_event(defines.events.on_entity_cloned, function(event)
 		lag_id = math.random(0, update_slots - 1)
 	}
 	global.units[destination.unit_number] = unit_data
-               
+
 	if item then
 		set_filter(unit_data)
 		update_unit(global.units[destination.unit_number], destination.unit_number, true)
@@ -245,21 +255,21 @@ end)
 local function on_destroyed(event)
 	local entity = event.entity
 	if entity.name ~= 'memory-unit' then return end
-	
+
 	local unit_data = global.units[entity.unit_number]
 	global.units[entity.unit_number] = nil
 	unit_data.powersource.destroy()
 	unit_data.combinator.destroy()
-	
+
 	local item = unit_data.item
 	local count = unit_data.count
 	local buffer = event.buffer
-	
+
 	if buffer and item and count ~= 0 then
 		buffer.clear()
 		buffer.insert('memory-unit-with-tags')
 		local stack = buffer.find_item_stack('memory-unit-with-tags')
-		stack.tags = {name = item, count = count}
+		stack.tags = { name = item, count = count }
 		stack.custom_description = {
 			'item-description.memory-unit-with-tags',
 			compactify(count),
@@ -276,16 +286,16 @@ script.on_event(defines.events.script_raised_destroy, on_destroyed)
 local function pre_mined(event)
 	local entity = event.entity
 	if entity.name ~= 'memory-unit' then return end
-	
+
 	local unit_data = global.units[entity.unit_number]
 	local item = unit_data.item
-	
+
 	if item then
 		local inventory = unit_data.inventory
 		local in_inventory = inventory.get_item_count(item)
-		
+
 		if in_inventory > 0 then
-			unit_data.count = unit_data.count + inventory.remove{name = item, count = in_inventory}
+			unit_data.count = unit_data.count + inventory.remove { name = item, count = in_inventory }
 		end
 	end
 end
@@ -293,3 +303,64 @@ end
 script.on_event(defines.events.on_pre_player_mined_item, pre_mined)
 script.on_event(defines.events.on_robot_pre_mined, pre_mined)
 script.on_event(defines.events.on_marked_for_deconstruction, pre_mined)
+
+--#region I have no idea what will come here, for now this is the code for beacon interactions
+
+
+---issues all storages affected by the beacon to recalculate their bonuses.
+---@param beacon_entity LuaEntity
+function update_nearby_storages(beacon_entity)
+	local supply_area = pad_area(beacon_entity.bounding_box,
+		game.entity_prototypes[beacon_entity.name].supply_area_distance)
+
+	local affected_memory_units = beacon_entity.surface.find_entities_filtered { area = supply_area, name = "memory-unit" }
+
+	for _, mem_unit in pairs(affected_memory_units) do
+		update_storage_effects(mem_unit)
+	end
+
+	game.print(#affected_memory_units)
+end
+
+function update_storage_effects(entity)
+	local effects = {
+		speed = 0,
+		energy = 0,
+	}
+
+	for name, data in pairs(game.get_filtered_entity_prototypes { { filter = "type", type = "beacon" } }) do
+		local beacons = entity.surface.find_entities_filtered { area = pad_area(entity.bounding_box, game.entity_prototypes[name].supply_area_distance), name = name }
+		
+		for _,beacon in pairs(beacons) do
+			if beacon.effects then
+				local effectivity =  game.entity_prototypes[beacon.type].distribution_effectivity
+				effects.speed = effects.speed + ((beacon.effects.speed or {bonus=0}).bonus) * effectivity
+				effects.energy = effects.energy + ((beacon.effects.consumption or {bonus=0}).bonus) * effectivity
+			end
+		end
+	end
+
+	game.print(effects.energy)
+	game.print(effects.speed)
+end
+
+---pad an area by a given amount
+---@param area BoundingBox
+---@param padding number
+---@return BoundingBox
+function pad_area(area, padding)
+	local new_area = table.deepcopy(area)
+	for index1, value1 in pairs(new_area) do
+		for index2, value2 in pairs(value1) do
+			if index1 == 1 or index1 == "left_top" then
+				new_area[index1][index2] = value2 - padding
+			else
+				new_area[index1][index2] = value2 + padding
+			end
+		end
+	end
+
+	return new_area
+end
+
+--#endregion
