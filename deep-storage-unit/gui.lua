@@ -10,6 +10,10 @@ local function update_gui(gui, fresh_gui)
 	local unit_data = global.units[gui.tags.unit_number]
 	if not unit_data then gui.destroy() return end
 	local content_flow = gui.main_flow.content_frame.content_flow
+
+	local memory_flow = gui.main_flow.memory_frame
+	local matter_conversion_frame = gui.main_flow.matter_conversion_frame
+
 	local entity = unit_data.entity
 	local powersource = unit_data.powersource
 	
@@ -36,15 +40,56 @@ local function update_gui(gui, fresh_gui)
 	--content_flow.io_flow.visible = visible
 	content_flow.no_input_item.visible = not visible
 	
-	content_flow.electric_flow.electricity.value = powersource.energy / powersource.electric_buffer_size
-	content_flow.electric_flow.consumption.caption = format_energy(powersource.energy) .. '/' .. format_energy(powersource.electric_buffer_size)
+	--- Memory UI
+	memory_flow.memory_electricity_flow.memory_electricity.value = powersource.energy / powersource.electric_buffer_size
+	memory_flow.memory_electricity_flow.memory_electricity_label.caption = format_energy(powersource.energy) .. ' / [font=default-semibold][color=255,230,192]' .. format_energy(powersource.electric_buffer_size) .. '[/color][/font]'
+	memory_flow.memory_header.memory_header_label.caption={"mod-gui.memory-tab-caption","T".. (unit_data.energy_tier or "?")}
+
+	--- Matter Conversion UI
+	local last_action = unit_data.last_action or 0
+	local function states ()
+		if not last_action or last_action == 0 then return {"entity-status.idle"} end
+		if last_action < 0 then return {"entity-status.inserting"} end
+		if last_action > 0 then return {"entity-status.extracting"} end
+	end
+	
+	matter_conversion_frame.matter_conversion_status_flow.matter_conversion_status_label.caption = "Working"
+	matter_conversion_frame.matter_conversion_status_flow.matter_conversion_info_label.caption = {
+		'',
+		states() , 
+		' ' .. math.min(math.abs(last_action),unit_data.max_conversion_speed) .. ' / [font=default-semibold][color=255,230,192]' .. unit_data.max_conversion_speed .. '[/color][/font] items/s'
+	}
+	local function mark_warning(header, bool)
+		if bool then
+			header.style = "negative_subheader_frame"
+		else
+			header.style = "subheader_frame"
+		end
+		---@diagnostic disable-next-line: inject-field
+		header.style.horizontally_stretchable = true
+	end
+
+	matter_conversion_frame.matter_conversion_header.matter_conversion_header_label.caption={"mod-gui.matter-tab-caption","T".. (unit_data.conversion_tier or "?")}
+	
+	if unit_data.stack_size then
+		local max_count = (unit_data.inventory.get_bar() - 1) * unit_data.stack_size
+		local filled_percent = unit_data.inventory.get_item_count(unit_data.item) / max_count
+		matter_conversion_frame.matter_conversion_info_flow.matter_buffer.value = filled_percent
+		if filled_percent > 0.875 or filled_percent < 0.125 then
+			mark_warning(matter_conversion_frame.matter_conversion_header,true)
+		else
+			mark_warning(matter_conversion_frame.matter_conversion_header,false)
+		end
+	end
+
+
 	if unit_data.item then update_power_usage(unit_data, count + inventory_count) end
 	
 	local status, img
 	if entity.to_be_deconstructed() then
 		status = {'entity-status.marked-for-deconstruction'}
 		img = 'utility/status_not_working'
-		content_flow.electric_flow.consumption.caption = ''
+		--content_flow.electric_flow.consumption.caption = ''
 	elseif powersource.energy == 0 then
 		status = {'entity-status.no-power'}
 		img = 'utility/status_not_working'
@@ -53,7 +98,7 @@ local function update_gui(gui, fresh_gui)
 			if not shared.check_for_basic_item(name) then
 				status = {'entity-status.cannot-store', game.item_prototypes[name].localised_name}
 				img = 'utility/status_not_working'
-				content_flow.electric_flow.consumption.caption = ''
+				--content_flow.electric_flow.consumption.caption = ''
 				goto cannot_store
 			end
 		end
@@ -118,13 +163,15 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	content_flow.style.margin = {-4, 0, -4, 0}
 	content_flow.style.vertical_align = 'center'
 	
-	local electric_flow = content_flow.add{type = 'flow', name = 'electric_flow', direction = 'horizontal'}
-	electric_flow.style.vertical_align = 'center'
-	electric_flow.style.horizontal_align = 'right'
-	electric_flow.style.width = 400
-	electric_flow.style.bottom_margin = -32
-	electric_flow.add{type = 'label', name = 'consumption'}.style.right_margin = 4
-	electric_flow.add{type = 'progressbar', name = 'electricity', style = 'electric_satisfaction_progressbar'}.style.width = 150
+	--[[
+		local electric_flow = content_flow.add{type = 'flow', name = 'electric_flow', direction = 'horizontal'}
+		electric_flow.style.vertical_align = 'center'
+		electric_flow.style.horizontal_align = 'right'
+		electric_flow.style.width = 400
+		electric_flow.style.bottom_margin = -32
+		electric_flow.add{type = 'label', name = 'consumption'}.style.right_margin = 4
+		electric_flow.add{type = 'progressbar', name = 'electricity', style = 'electric_satisfaction_progressbar'}.style.width = 150
+	]]
 
 	local status_flow = content_flow.add{type = 'flow', name = 'status_flow', direction = 'horizontal'}
 	status_flow.style.vertical_align = 'center'
@@ -158,16 +205,14 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	content_sprite.resize_to_sprite = false
 	content_sprite.style.size = {32, 32}
 	info_flow.add{type = 'label', name = 'current_storage'}
-	--content_flow.add{type = 'line', name = 'storage_seperator'}
-	
 	
 	local no_input_item = content_flow.add{type = 'sprite-button', name = 'no_input_item', style = 'inventory_slot', tooltip = {'mod-gui.no-input-item'}}
 	no_input_item.tags = {unit_number = entity.unit_number}
 
 	local memory_frame = main_flow.add{type = 'frame', name = 'memory_frame', direction = 'vertical', style = 'inside_shallow_frame'}
-	local memory_header = memory_frame.add{type="frame",name="memory_header", style = "negative_subheader_frame"}
+	local memory_header = memory_frame.add{type="frame",name="memory_header", style = "subheader_frame"}
 	memory_header.style.horizontally_stretchable = true
-	memory_header.add{type="label",name="memory_header_label",style="subheader_caption_label",caption="Data storage core",tooltip="The Data storage core determines the energy cost of items stored inside the memory unit."}
+	memory_header.add{type="label",name="memory_header_label",style="subheader_caption_label",tooltip={"mod-gui.memory-tab-tooltip"}}
 
 	local memory_status_flow = memory_frame.add{type="flow",name="memory_status_flow",direction="horizontal"}
 	memory_status_flow.style.vertical_align = "center"
@@ -176,34 +221,38 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	memory_status_flow.add{type="sprite",name="memory_status_sprite",sprite="utility/status_yellow"}
 	memory_status_flow.add{type="label",name="memory_status_label",caption="Suboptimal configuration"}
 
-	local memory_electricity_flow = memory_frame.add{type="flow",name="memory_status_electricity_flow"}
-	memory_electricity_flow.style.left_padding = 12
+	local memory_electricity_flow = memory_frame.add{type="flow",name="memory_electricity_flow"}
+	memory_electricity_flow.style.right_padding = 12
 	memory_electricity_flow.style.bottom_margin = 6
 	memory_electricity_flow.style.horizontally_stretchable = true
 	memory_electricity_flow.style.vertical_align = "center"
-	--memory_electricity_flow.style.horizontal_align = "right"
-	memory_electricity_flow.add{type="label",name="memory_label",caption="10GW/10GW"}.style.right_margin = 4
-	local memory_satisfaction_progressbar = memory_electricity_flow.add{type="progressbar",name="memory_electricity",style="electric_satisfaction_progressbar"}
-	memory_satisfaction_progressbar.value = 1
-	memory_satisfaction_progressbar.style.horizontal_align = "right"
+	memory_electricity_flow.style.horizontal_align = "right"
+	memory_electricity_flow.add{type="label",name="memory_electricity_label"}.style.right_margin = 4
+	memory_electricity_flow.add{type="progressbar",name="memory_electricity",style="electric_satisfaction_progressbar"}.style.width = 250
 
 
 	local matter_conversion_frame = main_flow.add{type = 'frame', name = 'matter_conversion_frame', direction = 'vertical', style = 'inside_shallow_frame'}
 	local matter_conversion_header = matter_conversion_frame.add{type="frame",name="matter_conversion_header", style = "subheader_frame"}
 	matter_conversion_header.style.horizontally_stretchable = true
-	matter_conversion_header.add{type="label",name="matter_conversion_header_label",style="subheader_caption_label",caption="Matter conversion core",tooltip="The Matter conversion core limts the rate at which items can be inserted or extracted."}
+	matter_conversion_header.add{type="label",name="matter_conversion_header_label",style="subheader_caption_label",tooltip={"mod-gui.matter-tab-tooltip"}}
 
 	local matter_conversion_status_flow = matter_conversion_frame.add{type="flow",name="matter_conversion_status_flow",direction="horizontal"}
 	matter_conversion_status_flow.style.vertical_align = "center"
 	matter_conversion_status_flow.style.top_margin = 6
 	matter_conversion_status_flow.style.left_padding = 12
 	matter_conversion_status_flow.add{type="sprite",name="matter_conversion_status_sprite",sprite="utility/status_working"}
-	matter_conversion_status_flow.add{type="label",name="matter_conversion_status_label",caption="Idle"}
+	matter_conversion_status_flow.add{type="label",name="matter_conversion_status_label"}.style.right_margin = 8
+	matter_conversion_status_flow.add{type="label",name="matter_conversion_info_label"}
 
 	local matter_conversion_info_flow = matter_conversion_frame.add{type="flow",name="matter_conversion_info_flow",direction="horizontal"}
-	matter_conversion_info_flow.style.left_padding = 12
+	matter_conversion_info_flow.style.right_padding = 12
 	matter_conversion_info_flow.style.bottom_margin = 6
-	matter_conversion_info_flow.add{type="label",name="matter_conversion_info_label",caption="Maximum conversion rate: [font=default-semibold][color=255,230,192]60 items/s[/color][/font]"}
+	matter_conversion_info_flow.style.vertical_align = "center"
+	matter_conversion_info_flow.style.horizontal_align = "right"
+	matter_conversion_info_flow.style.horizontally_stretchable = true
+	matter_conversion_info_flow.add{type="label",name="matter_buffer_label", caption = {"mod-gui.matter-tab-bar-caption"}}.style.right_margin = 4
+	matter_conversion_info_flow.add{type="progressbar",name="matter_buffer",style="mu_io_buffer_filled",tooltip = {'mod-gui.matter-tab-bar-tooltip'}}.style.width = 250
+
 	update_gui(main_frame, true)
 	
 end)

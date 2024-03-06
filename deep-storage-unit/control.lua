@@ -82,7 +82,7 @@ local function detect_item(unit_data)
 		if shared.check_for_basic_item(name) then
 			unit_data.item = name
 			unit_data.stack_size = game.item_prototypes[name].stack_size
-			unit_data.comfortable = unit_data.stack_size * #inventory / 2
+			unit_data.comfortable = unit_data.stack_size * (inventory.get_bar() - 1) / 2
 			set_filter(unit_data)
 			return true
 		end
@@ -96,6 +96,8 @@ function update_unit(unit_data, unit_number, force)
 	local combinator = unit_data.combinator
 	local container = unit_data.container
 	local inventory = unit_data.inventory
+	
+	update_storage_effects(unit_data)
 
 	if validity_check(unit_number, unit_data, force) then return end
 
@@ -104,16 +106,19 @@ function update_unit(unit_data, unit_number, force)
 	
 	if unit_data.item == nil then changed = detect_item(unit_data) end
 	local item = unit_data.item
+	
 	if item == nil then return end
 	local comfortable = unit_data.comfortable
 	
 	
+	
 	--- set i/o cap, 30/s for tier 0, additional 30/s for each speed module
-	update_storage_effects(unit_data)
-	local max_conversion_speed = unit_data.max_conversion_speed
+	local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.1)
+	unit_data.last_action = nil
 
 	local inventory_count = inventory.get_item_count(item)
 	if inventory_count > comfortable then
+		unit_data.last_action = comfortable - inventory_count
 		local amount_removed = inventory.remove { name = item, count = math.min(inventory_count - comfortable,max_conversion_speed) }
 		unit_data.count = unit_data.count + amount_removed
 		inventory_count = inventory_count - amount_removed
@@ -127,12 +132,14 @@ function update_unit(unit_data, unit_number, force)
 			to_add = unit_data.count
 		end
 		if to_add ~= 0 then
+			unit_data.last_action = comfortable - inventory_count
 			local amount_added = entity.insert { name = item, count = to_add }
 			unit_data.count = unit_data.count - amount_added
 			inventory_count = inventory_count + amount_added
 		end
 	end
 
+	unit_data.last_action = unit_data.last_action or 0
 
 	if force or changed then
 		inventory.sort_and_merge()
@@ -197,6 +204,8 @@ local function on_created(event)
 	else
 		shared.update_power_usage(unit_data, 0)
 	end
+
+	update_storage_effects(unit_data)
 end
 
 script.on_event(defines.events.on_built_entity, on_created)
@@ -324,8 +333,6 @@ function update_nearby_storages(beacon_entity)
 	for _, mem_unit in pairs(affected_memory_units) do
 		update_storage_effects(mem_unit)
 	end
-
-	game.print(#affected_memory_units)
 end
 
 function update_storage_effects(unit_data)
@@ -348,8 +355,25 @@ function update_storage_effects(unit_data)
 			end
 		end
 	end
+	
+	unit_data.conversion_tier = math.floor(effects.speed * 4 + 0.5)
+	unit_data.energy_tier = math.floor(effects.energy * 2 + 0.5)
+	
+	local new_max_conversion_speed = (unit_data.conversion_tier + 1) * (update_rate * update_slots)/60 * 30
 
-	unit_data.max_conversion_speed = (unit_data.effects.speed * 4 + 1) * (update_rate * update_slots) * 0.5
+	if unit_data.max_conversion_speed == new_max_conversion_speed then return end
+	
+	unit_data.max_conversion_speed = new_max_conversion_speed
+	if not unit_data.stack_size then return end
+
+	local inventory_limit = math.min(
+		--- we want to be able to buffer 8 cycles in either direction
+		math.ceil(new_max_conversion_speed * 8 / unit_data.stack_size) * 2,
+		--- use inventory size as fallback
+		#unit_data.inventory)
+
+	unit_data.comfortable = unit_data.stack_size * inventory_limit / 2
+	unit_data.inventory.set_bar(inventory_limit + 1)
 end
 
 ---pad an area by a given amount
