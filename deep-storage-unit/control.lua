@@ -8,6 +8,12 @@ local compactify = shared.compactify
 local validity_check = shared.validity_check
 local clamp = shared.clamp
 
+local beacons_max_count = {
+	["se-wide-beacon"] = 0,
+	["se-wide-beacon-2"] = 0,
+	["se-compact-beacon"] = 4,
+	["se-compact-beacon-2"] = 4,
+}
 
 --#region Temp functions
 local update_storage_effects
@@ -98,7 +104,8 @@ function update_unit(unit_data, unit_number, force)
 	local inventory = unit_data.inventory
 	
 	update_storage_effects(unit_data)
-
+	
+	unit_data.last_action = 0
 	if validity_check(unit_number, unit_data, force) then return end
 
 	local changed = false
@@ -114,7 +121,6 @@ function update_unit(unit_data, unit_number, force)
 	
 	--- set i/o cap, 30/s for tier 0, additional 30/s for each speed module
 	local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.1)
-	unit_data.last_action = nil
 
 	local inventory_count = inventory.get_item_count(item)
 	if inventory_count > comfortable then
@@ -320,8 +326,34 @@ script.on_event(defines.events.on_robot_pre_mined, pre_mined)
 script.on_event(defines.events.on_marked_for_deconstruction, pre_mined)
 
 --#region I have no idea what will come here, for now this is the code for beacon interactions
-function overbeacon_storage(unit_data)
+---handles overloading a storage when blacklisted beacons are used
+---@param unit_data table
+function overload_storage(unit_data,name)
+	-- map alert
+	for _, player in pairs(unit_data.entity.force.players) do
+		local conflict_string
+		if beacons_max_count[name] == 0 then
+			conflict_string = "entity-overloading.invalid-beacon-tooltip"
+		else
+			conflict_string = "entity-overloading.invalid-beacon-tooltip-too-many"
+		end
+		player.add_custom_alert(unit_data.entity,{type="virtual", name="se-beacon-overload"},
+		{conflict_string, "[img=virtual-signal/se-beacon-overload]", "[img=entity/" .. name .. "]", beacons_max_count[name]},
+        true)
+	end
 	
+	-- create sprite on machine
+	if not unit_data.overloaded_sprite or not rendering.is_valid(unit_data.overloaded_sprite) then
+		unit_data.overloaded_sprite = rendering.draw_sprite{sprite= "virtual-signal/se-beacon-overload",surface = unit_data.entity.surface, target = unit_data.entity}
+	end
+end
+
+function overload_storage_clear(unit_data)
+	if unit_data.overloaded_sprite and rendering.is_valid(unit_data.overloaded_sprite) then
+		rendering.destroy(unit_data.overloaded_sprite)
+	end
+
+	unit_data.overloaded_sprite = nil
 end
 
 function update_inventory_limits(unit_data)
@@ -344,9 +376,17 @@ function update_storage_effects(unit_data)
 
 	if not beacon_prototypes then beacon_prototypes = game.get_filtered_entity_prototypes { { filter = "type", type = "beacon" } } end
 
+	local overload = false
+
 	for name, data in pairs(beacon_prototypes) do
 		local beacons = unit.surface.find_entities_filtered { area = pad_area(unit.bounding_box, game.entity_prototypes[name].supply_area_distance), name = name }
 		
+		if beacons_max_count[name] and #beacons > beacons_max_count[name] then
+			overload_storage(unit_data,name)
+			overload = true
+			goto skip
+		end
+
 		for _,beacon in pairs(beacons) do
 			if beacon.energy == 0 then goto continue end
 			if beacon.effects then
@@ -356,13 +396,23 @@ function update_storage_effects(unit_data)
 			end
 			::continue::
 		end
+		::skip::
+	end
+
+	if not overload and unit_data.overloaded_sprite then
+		overload_storage_clear(unit_data)
 	end
 	
-	unit_data.conversion_tier = clamp(math.floor(effects.speed * 4 + 0.5),12,0)
-	unit_data.energy_tier = clamp(-math.floor(effects.energy * 2 + 0.5),8,0)
-	
-	local new_max_conversion_speed = (unit_data.conversion_tier + 1) * (update_rate * update_slots)/60 * 30
+	-- non se values
+	--unit_data.conversion_tier = clamp(math.floor(effects.speed * 4 + 0.5),12,0)
+	--unit_data.energy_tier = clamp(-math.floor(effects.energy * 2 + 0.5),8,0)
 
+	-- se values
+	unit_data.conversion_tier = clamp(math.floor(effects.speed/15 *16),16,0)
+	unit_data.energy_tier = clamp(math.floor((-effects.energy)/70 * 4),8,0)
+
+	local new_max_conversion_speed = (unit_data.conversion_tier + 1) * (update_rate * update_slots)/60 * 30
+	
 	if unit_data.max_conversion_speed == new_max_conversion_speed then return end
 	
 	unit_data.max_conversion_speed = new_max_conversion_speed

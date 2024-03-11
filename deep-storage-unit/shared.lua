@@ -216,7 +216,7 @@ local function validity_check(unit_number, unit_data, force)
 		return true
 	end
 	
-	if not force and not has_power(unit_data.powersource, unit_data.entity) then return true end
+	if (not force and not has_power(unit_data.powersource, unit_data.entity)) or unit_data.overloaded_sprite then return true end
 	return false
 end
 

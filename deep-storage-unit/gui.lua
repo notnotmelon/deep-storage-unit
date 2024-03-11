@@ -81,6 +81,7 @@ local function update_gui(gui, fresh_gui)
 
 	--States:
 	--no item -> red light, no item text
+	--building overloaded -> yellow light, overload text
 	--suboptimal config -> yellow light, suboptimal config text
 	--low power -> yellow light, low power text
 	--working -> green light, working text
@@ -93,12 +94,15 @@ local function update_gui(gui, fresh_gui)
 	if not unit_data.item then
 		sprite.sprite="utility/status_not_working"
 		label.caption={"entity-status.no-input-item"}
+	elseif unit_data.overloaded_sprite then
+		sprite.sprite = "utility/status_yellow"
+		label.caption = {"entity-status.invalid-beacon"}
 	else		
 		local energy_tier = unit_data.energy_tier
 		local warning_threshold = power_table.tier_borders[energy_tier]
 		if unit_data.count/unit_data.stack_size > warning_threshold then
 			sprite.sprite="utility/status_yellow"
-			label.caption="Suboptimal configuration"
+			label.caption={"entity-status.suboptimal"}
 			mark_warning(memory_frame.memory_header,true)
 		elseif low_power then
 			sprite.sprite="utility/status_yellow"
@@ -113,6 +117,7 @@ local function update_gui(gui, fresh_gui)
 	--- Matter Conversion UI
 	--States:
 	--no item -> red light, no item text
+	--building overloaded -> yellow light, overload text
 	--overloaded -> yellow light, overload text, warning marker
 	--low power -> yellow light, low power text
 	--working -> green light, working text
@@ -126,15 +131,25 @@ local function update_gui(gui, fresh_gui)
 	if not unit_data.item then
 		sprite.sprite = "utility/status_not_working"
 		label.caption = {"entity-status.no-input-item"}
-	elseif false then
+	
+	elseif unit_data.overloaded_sprite then
+		sprite.sprite = "utility/status_yellow"
+		label.caption = {"entity-status.invalid-beacon"}
+	else
+		local max_count = (unit_data.inventory.get_bar() - 1) * unit_data.stack_size
+		local filled_percent = unit_data.inventory.get_item_count(unit_data.item) / max_count
+		matter_conversion_frame.matter_conversion_info_flow.matter_buffer.value = filled_percent
+		if filled_percent > 0.875 or (filled_percent < 0.125 and unit_data.count > 0) then
 		sprite.sprite = "utility/status_yellow"
 		label.caption = {"entity-status.overloaded"}
-	elseif low_power then
-		sprite.sprite = "utility/status_yellow"
-		label.caption = {"entity-status.low-power"}
-	else
-		sprite.sprite = "utility/status_working"
-		label.caption = {"entity-status.working"}
+		mark_warning(matter_conversion_frame.matter_conversion_header,true)
+		elseif low_power then
+			sprite.sprite = "utility/status_yellow"
+			label.caption = {"entity-status.low-power"}
+		else
+			sprite.sprite = "utility/status_working"
+			label.caption = {"entity-status.working"}
+		end
 	end
 
 	local last_action = unit_data.last_action or 0
@@ -151,15 +166,6 @@ local function update_gui(gui, fresh_gui)
 	}
 	
 	matter_conversion_frame.matter_conversion_header.matter_conversion_header_label.caption={"mod-gui.matter-tab-caption","T".. (unit_data.conversion_tier or "?").."/12"}
-	
-	if unit_data.stack_size then
-		local max_count = (unit_data.inventory.get_bar() - 1) * unit_data.stack_size
-		local filled_percent = unit_data.inventory.get_item_count(unit_data.item) / max_count
-		matter_conversion_frame.matter_conversion_info_flow.matter_buffer.value = filled_percent
-		if filled_percent > 0.875 or (filled_percent < 0.125 and unit_data.count > 0) then
-			mark_warning(matter_conversion_frame.matter_conversion_header,true)
-		end
-	end
 
 
 	
