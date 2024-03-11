@@ -1,9 +1,38 @@
 local shared = require 'shared'
 local compactify = shared.compactify
 local update_power_usage = shared.update_power_usage
+local power_table = shared.power_table
 
 local function format_energy(energy)
-	return string.format('%.2f', energy * 60 / 1000000) .. 'MW'
+	local consumption = energy * 60 / 1000000
+
+	local mag = 1
+	while consumption >= 1000 do
+		consumption = consumption / 1000
+		mag = mag + 1
+	end
+
+	local unit_table = {
+		[1] = 'MW',
+		[2] = 'GW',
+		[3] = 'TW',
+		[4] = 'PW',
+		[5] = 'EW'
+	}
+
+	local suffix = unit_table[mag] or 'a lot!'
+	
+	return string.format('%.2f',consumption ) .. suffix
+end
+
+local function mark_warning(header, bool)
+	if bool then
+		header.style = "negative_subheader_frame"
+	else
+		header.style = "subheader_frame"
+	end
+	---@diagnostic disable-next-line: inject-field
+	header.style.horizontally_stretchable = true
 end
 
 local function update_gui(gui, fresh_gui)
@@ -11,7 +40,7 @@ local function update_gui(gui, fresh_gui)
 	if not unit_data then gui.destroy() return end
 	local content_flow = gui.main_flow.content_frame.content_flow
 
-	local memory_flow = gui.main_flow.memory_frame
+	local memory_frame = gui.main_flow.memory_frame
 	local matter_conversion_frame = gui.main_flow.matter_conversion_frame
 
 	local entity = unit_data.entity
@@ -36,16 +65,78 @@ local function update_gui(gui, fresh_gui)
 	end
 	local visible = not not unit_data.item
 	content_flow.storage_flow.visible = visible
-	--content_flow.storage_seperator.visible = visible
-	--content_flow.io_flow.visible = visible
+	content_flow.storage_flow.io_flow.visible = visible
 	content_flow.no_input_item.visible = not visible
 	
 	--- Memory UI
-	memory_flow.memory_electricity_flow.memory_electricity.value = powersource.energy / powersource.electric_buffer_size
-	memory_flow.memory_electricity_flow.memory_electricity_label.caption = format_energy(powersource.energy) .. ' / [font=default-semibold][color=255,230,192]' .. format_energy(powersource.electric_buffer_size) .. '[/color][/font]'
-	memory_flow.memory_header.memory_header_label.caption={"mod-gui.memory-tab-caption","T".. (unit_data.energy_tier or "?")}
+	memory_frame.memory_electricity_flow.memory_electricity.value = powersource.energy / powersource.electric_buffer_size
+	memory_frame.memory_electricity_flow.memory_electricity_label.caption = format_energy(powersource.energy) .. ' / [font=default-semibold][color=255,230,192]' .. format_energy(powersource.electric_buffer_size) .. '[/color][/font]'
+	memory_frame.memory_header.memory_header_label.caption={"mod-gui.memory-tab-caption","T".. (unit_data.energy_tier or "?").."/8"}
+	
+	if unit_data.item then update_power_usage(unit_data, count + inventory_count) end
+
+	local low_power = powersource.energy < powersource.electric_buffer_size * 0.9
+	
+	--- Memory UI
+
+	--States:
+	--no item -> red light, no item text
+	--suboptimal config -> yellow light, suboptimal config text
+	--low power -> yellow light, low power text
+	--working -> green light, working text
+	
+	local sprite = memory_frame.memory_status_flow.memory_status_sprite
+	local label = memory_frame.memory_status_flow.memory_status_label
+	local header = memory_frame.memory_header
+
+	mark_warning(header,false)
+	if not unit_data.item then
+		sprite.sprite="utility/status_not_working"
+		label.caption={"entity-status.no-input-item"}
+	else		
+		local energy_tier = unit_data.energy_tier
+		local warning_threshold = power_table.tier_borders[energy_tier]
+		if unit_data.count/unit_data.stack_size > warning_threshold then
+			sprite.sprite="utility/status_yellow"
+			label.caption="Suboptimal configuration"
+			mark_warning(memory_frame.memory_header,true)
+		elseif low_power then
+			sprite.sprite="utility/status_yellow"
+			label.caption={"entity-status.low-power"}
+		else
+			sprite.sprite="utility/status_working"
+			label.caption="Working"
+		end
+	end
+
 
 	--- Matter Conversion UI
+	--States:
+	--no item -> red light, no item text
+	--overloaded -> yellow light, overload text, warning marker
+	--low power -> yellow light, low power text
+	--working -> green light, working text
+	
+	sprite = matter_conversion_frame.matter_conversion_status_flow.matter_conversion_status_sprite
+	label = matter_conversion_frame.matter_conversion_status_flow.matter_conversion_status_label
+	header = matter_conversion_frame.matter_conversion_header
+	
+	mark_warning(header,false)
+
+	if not unit_data.item then
+		sprite.sprite = "utility/status_not_working"
+		label.caption = {"entity-status.no-input-item"}
+	elseif false then
+		sprite.sprite = "utility/status_yellow"
+		label.caption = {"entity-status.overloaded"}
+	elseif low_power then
+		sprite.sprite = "utility/status_yellow"
+		label.caption = {"entity-status.low-power"}
+	else
+		sprite.sprite = "utility/status_working"
+		label.caption = {"entity-status.working"}
+	end
+
 	local last_action = unit_data.last_action or 0
 	local function states ()
 		if not last_action or last_action == 0 then return {"entity-status.idle"} end
@@ -53,43 +144,31 @@ local function update_gui(gui, fresh_gui)
 		if last_action > 0 then return {"entity-status.extracting"} end
 	end
 	
-	matter_conversion_frame.matter_conversion_status_flow.matter_conversion_status_label.caption = "Working"
 	matter_conversion_frame.matter_conversion_status_flow.matter_conversion_info_label.caption = {
 		'',
 		states() , 
 		' ' .. math.min(math.abs(last_action),unit_data.max_conversion_speed) .. ' / [font=default-semibold][color=255,230,192]' .. unit_data.max_conversion_speed .. '[/color][/font] items/s'
 	}
-	local function mark_warning(header, bool)
-		if bool then
-			header.style = "negative_subheader_frame"
-		else
-			header.style = "subheader_frame"
-		end
-		---@diagnostic disable-next-line: inject-field
-		header.style.horizontally_stretchable = true
-	end
-
-	matter_conversion_frame.matter_conversion_header.matter_conversion_header_label.caption={"mod-gui.matter-tab-caption","T".. (unit_data.conversion_tier or "?")}
+	
+	matter_conversion_frame.matter_conversion_header.matter_conversion_header_label.caption={"mod-gui.matter-tab-caption","T".. (unit_data.conversion_tier or "?").."/12"}
 	
 	if unit_data.stack_size then
 		local max_count = (unit_data.inventory.get_bar() - 1) * unit_data.stack_size
 		local filled_percent = unit_data.inventory.get_item_count(unit_data.item) / max_count
 		matter_conversion_frame.matter_conversion_info_flow.matter_buffer.value = filled_percent
-		if filled_percent > 0.875 or filled_percent < 0.125 then
+		if filled_percent > 0.875 or (filled_percent < 0.125 and unit_data.count > 0) then
 			mark_warning(matter_conversion_frame.matter_conversion_header,true)
-		else
-			mark_warning(matter_conversion_frame.matter_conversion_header,false)
 		end
 	end
 
 
-	if unit_data.item then update_power_usage(unit_data, count + inventory_count) end
 	
+	--[[
+
 	local status, img
 	if entity.to_be_deconstructed() then
 		status = {'entity-status.marked-for-deconstruction'}
 		img = 'utility/status_not_working'
-		--content_flow.electric_flow.consumption.caption = ''
 	elseif powersource.energy == 0 then
 		status = {'entity-status.no-power'}
 		img = 'utility/status_not_working'
@@ -98,7 +177,6 @@ local function update_gui(gui, fresh_gui)
 			if not shared.check_for_basic_item(name) then
 				status = {'entity-status.cannot-store', game.item_prototypes[name].localised_name}
 				img = 'utility/status_not_working'
-				--content_flow.electric_flow.consumption.caption = ''
 				goto cannot_store
 			end
 		end
@@ -115,6 +193,7 @@ local function update_gui(gui, fresh_gui)
 	
 	content_flow.status_flow.status_text.caption = status
 	content_flow.status_flow.status_sprite.sprite = img
+	]]
 end
 
 script.on_nth_tick(2, function(event)
@@ -156,12 +235,18 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	main_frame.tags = {unit_number = entity.unit_number}
 	local main_flow = main_frame.add{type="flow",name="main_flow",direction="vertical"}
 	main_flow.style.vertical_spacing = 12
+	
+	local controller_frame = main_flow.add{type = 'frame', name = 'content_frame', direction = 'vertical', style = 'inside_shallow_frame'}
 
-	local content_frame = main_flow.add{type = 'frame', name = 'content_frame', direction = 'vertical', style = 'inside_shallow_frame_with_padding'}
-	local content_flow = content_frame.add{type = 'flow', name = 'content_flow', direction = 'vertical'}
-	content_flow.style.vertical_spacing = 8
-	content_flow.style.margin = {-4, 0, -4, 0}
-	content_flow.style.vertical_align = 'center'
+	local controller_header = controller_frame.add{type="frame",name="controller_header", style = "subheader_frame"}
+	controller_header.style.horizontally_stretchable = true
+	controller_header.add{type="label",name="controller_header_label",style="subheader_caption_label",caption={"mod-gui.unit-controller-caption"}}
+
+	local controller_flow = controller_frame.add{type = 'flow', name = 'content_flow', direction = 'vertical'}
+	controller_flow.style.vertical_spacing = 8
+	controller_flow.style.margin = {-4, 0, -4, 0}
+	controller_flow.style.vertical_align = 'center'
+	controller_flow.style.padding = 12
 	
 	--[[
 		local electric_flow = content_flow.add{type = 'flow', name = 'electric_flow', direction = 'horizontal'}
@@ -173,21 +258,22 @@ script.on_event(defines.events.on_gui_opened, function(event)
 		electric_flow.add{type = 'progressbar', name = 'electricity', style = 'electric_satisfaction_progressbar'}.style.width = 150
 	]]
 
-	local status_flow = content_flow.add{type = 'flow', name = 'status_flow', direction = 'horizontal'}
+	--[[local status_flow = content_flow.add{type = 'flow', name = 'status_flow', direction = 'horizontal'}
 	status_flow.style.vertical_align = 'center'
 	status_flow.style.top_margin = 4
 	local status_sprite = status_flow.add{type = 'sprite', name = 'status_sprite'}
 	status_sprite.resize_to_sprite = false
 	status_sprite.style.size = {16, 16}
-	local status_text = status_flow.add{type = 'label', name = 'status_text'}
+	local status_text = status_flow.add{type = 'label', name = 'status_text'}]]
+
 	
-	local entity_preview = content_flow.add{type = 'entity-preview', name = 'entity_preview', style = 'mu_entity_preview'}
+	local entity_preview = controller_flow.add{type = 'entity-preview', name = 'entity_preview', style = 'mu_entity_preview'}
 	entity_preview.entity = entity
 	entity_preview.visible = true
 	entity_preview.style.height = 155
 	
 
-	local storage_flow = content_flow.add{type = 'flow', name = 'storage_flow', direction = 'horizontal'}
+	local storage_flow = controller_flow.add{type = 'flow', name = 'storage_flow', direction = 'horizontal'}
 	storage_flow.style.vertical_align = 'center'
 	storage_flow.style.horizontal_spacing = 18
 	
@@ -206,7 +292,7 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	content_sprite.style.size = {32, 32}
 	info_flow.add{type = 'label', name = 'current_storage'}
 	
-	local no_input_item = content_flow.add{type = 'sprite-button', name = 'no_input_item', style = 'inventory_slot', tooltip = {'mod-gui.no-input-item'}}
+	local no_input_item = controller_flow.add{type = 'sprite-button', name = 'no_input_item', style = 'inventory_slot', tooltip = {'mod-gui.no-input-item'}}
 	no_input_item.tags = {unit_number = entity.unit_number}
 
 	local memory_frame = main_flow.add{type = 'frame', name = 'memory_frame', direction = 'vertical', style = 'inside_shallow_frame'}
@@ -218,8 +304,8 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	memory_status_flow.style.vertical_align = "center"
 	memory_status_flow.style.top_margin = 6
 	memory_status_flow.style.left_padding = 12
-	memory_status_flow.add{type="sprite",name="memory_status_sprite",sprite="utility/status_yellow"}
-	memory_status_flow.add{type="label",name="memory_status_label",caption="Suboptimal configuration"}
+	memory_status_flow.add{type="sprite",name="memory_status_sprite"}
+	memory_status_flow.add{type="label",name="memory_status_label"}
 
 	local memory_electricity_flow = memory_frame.add{type="flow",name="memory_electricity_flow"}
 	memory_electricity_flow.style.right_padding = 12
@@ -308,6 +394,7 @@ local function prime_unit(event, element)
 	unit_data.stack_size = stack.prototype.stack_size
 	unit_data.comfortable = unit_data.stack_size * #unit_data.inventory / 2
 	set_filter(unit_data)
+	update_inventory_limits(unit_data)
 	stack.clear()
 	
 	update_unit(unit_data, element.tags.unit_number, true)

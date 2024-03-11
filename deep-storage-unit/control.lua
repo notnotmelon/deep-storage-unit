@@ -6,10 +6,10 @@ local update_rate = shared.update_rate
 local update_slots = shared.update_slots
 local compactify = shared.compactify
 local validity_check = shared.validity_check
+local clamp = shared.clamp
 
 
 --#region Temp functions
-local update_nearby_storages
 local update_storage_effects
 local pad_area
 local beacon_prototypes
@@ -82,8 +82,8 @@ local function detect_item(unit_data)
 		if shared.check_for_basic_item(name) then
 			unit_data.item = name
 			unit_data.stack_size = game.item_prototypes[name].stack_size
-			unit_data.comfortable = unit_data.stack_size * (inventory.get_bar() - 1) / 2
 			set_filter(unit_data)
+			update_inventory_limits(unit_data)
 			return true
 		end
 	end
@@ -320,19 +320,19 @@ script.on_event(defines.events.on_robot_pre_mined, pre_mined)
 script.on_event(defines.events.on_marked_for_deconstruction, pre_mined)
 
 --#region I have no idea what will come here, for now this is the code for beacon interactions
+function overbeacon_storage(unit_data)
+	
+end
 
+function update_inventory_limits(unit_data)
+	local inventory_limit = math.min(
+		--- we want to be able to buffer 8 cycles in either direction
+		math.ceil(unit_data.max_conversion_speed * 8 / unit_data.stack_size) * 2,
+		--- use inventory size as fallback
+		#unit_data.inventory)
 
----issues all storages affected by the beacon to recalculate their bonuses.
----@param beacon_entity LuaEntity
-function update_nearby_storages(beacon_entity)
-	local supply_area = pad_area(beacon_entity.bounding_box,
-		game.entity_prototypes[beacon_entity.name].supply_area_distance)
-
-	local affected_memory_units = beacon_entity.surface.find_entities_filtered { area = supply_area, name = "memory-unit" }
-
-	for _, mem_unit in pairs(affected_memory_units) do
-		update_storage_effects(mem_unit)
-	end
+	unit_data.comfortable = unit_data.stack_size * inventory_limit / 2
+	unit_data.inventory.set_bar(inventory_limit + 1)
 end
 
 function update_storage_effects(unit_data)
@@ -348,16 +348,18 @@ function update_storage_effects(unit_data)
 		local beacons = unit.surface.find_entities_filtered { area = pad_area(unit.bounding_box, game.entity_prototypes[name].supply_area_distance), name = name }
 		
 		for _,beacon in pairs(beacons) do
+			if beacon.energy == 0 then goto continue end
 			if beacon.effects then
 				local effectivity =  game.entity_prototypes[beacon.type].distribution_effectivity
 				effects.speed = effects.speed + ((beacon.effects.speed or {bonus=0}).bonus) * effectivity
 				effects.energy = effects.energy + ((beacon.effects.consumption or {bonus=0}).bonus) * effectivity
 			end
+			::continue::
 		end
 	end
 	
-	unit_data.conversion_tier = math.floor(effects.speed * 4 + 0.5)
-	unit_data.energy_tier = math.floor(effects.energy * 2 + 0.5)
+	unit_data.conversion_tier = clamp(math.floor(effects.speed * 4 + 0.5),12,0)
+	unit_data.energy_tier = clamp(-math.floor(effects.energy * 2 + 0.5),8,0)
 	
 	local new_max_conversion_speed = (unit_data.conversion_tier + 1) * (update_rate * update_slots)/60 * 30
 
@@ -366,14 +368,7 @@ function update_storage_effects(unit_data)
 	unit_data.max_conversion_speed = new_max_conversion_speed
 	if not unit_data.stack_size then return end
 
-	local inventory_limit = math.min(
-		--- we want to be able to buffer 8 cycles in either direction
-		math.ceil(new_max_conversion_speed * 8 / unit_data.stack_size) * 2,
-		--- use inventory size as fallback
-		#unit_data.inventory)
-
-	unit_data.comfortable = unit_data.stack_size * inventory_limit / 2
-	unit_data.inventory.set_bar(inventory_limit + 1)
+	update_inventory_limits(unit_data)
 end
 
 ---pad an area by a given amount
@@ -394,5 +389,4 @@ function pad_area(area, padding)
 
 	return new_area
 end
-
 --#endregion

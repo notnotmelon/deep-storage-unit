@@ -3,6 +3,48 @@
 local min = math.min
 local floor = math.floor
 
+local clamp = function (x,upper,lower)
+	return math.min(upper,math.max(lower,x))
+end
+
+local tier_borders = {
+	[0] =     1000,
+	[1] =     4000,
+	[2] =    16000,
+	[3] =    64000,
+	[4] =   256000,
+	[5] =  1024000,
+	[6] =  4096000,
+	[7] = 16384000,
+	[8] = 65536000
+}
+
+local base_graphs = {
+	[0] = function (x) return 100 * math.pow(x,0.9) end,
+	[1] = function (x) return 90 * math.pow(x,0.875) end,
+	[2] = function (x) return 80 * math.pow(x,0.85) end,
+	[3] = function (x) return 70 * math.pow(x,0.825) end,
+	[4] = function (x) return 60 * math.pow(x,0.8) end,
+	[5] = function (x) return 50 * math.pow(x,0.775) end,
+	[6] = function (x) return 40 * math.pow(x,0.75) end,
+	[7] = function (x) return 30 * math.pow(x,0.725) end,
+	[8] = function (x) return 20 * math.pow(x,0.7) end,
+}
+
+local transition_heights = {}
+
+--- created to reflect https://www.desmos.com/calculator/tqogtkoo5d
+---@type table <number,function<number,number>>
+local power_table = {tier_borders = tier_borders}
+
+transition_heights[0] = 0
+power_table[0] = base_graphs[0]
+
+for i = 1,8,1 do
+	transition_heights[i] = - base_graphs[i](tier_borders[i-1]) + power_table[i-1](tier_borders[i-1])
+power_table[i] = function (x) return transition_heights[i] + base_graphs[i](x) end
+end
+
 ---turns a number into a human readable number
 ---@param n number
 ---@return table
@@ -99,7 +141,7 @@ local base_usage = 1000000 / 60
 ---@param count any
 local function update_power_usage(unit_data, count)
 	local powersource = unit_data.powersource
-	local power_usage = (math.ceil(count / (unit_data.stack_size or 1000)) ^ 0.35) * power_usages[settings.global['memory-unit-power-usage'].value]
+	local power_usage = power_table[unit_data.energy_tier or 0](math.ceil(count / (unit_data.stack_size or 1000))) / 60 * 1000
 	power_usage = power_usage + base_usage
 	powersource.power_usage = power_usage
 	powersource.electric_buffer_size = power_usage
@@ -202,5 +244,7 @@ return {
 	check_for_basic_item = check_for_basic_item,
 	memory_unit_corruption = memory_unit_corruption,
 	validity_check = validity_check,
-	combine_tempatures = combine_tempatures
+	combine_tempatures = combine_tempatures,
+	clamp = clamp,
+	power_table = power_table
 }
