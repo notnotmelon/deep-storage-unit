@@ -210,13 +210,15 @@ end
 ---@param unit_data table
 ---@param force LuaForce
 ---@return boolean
-local function validity_check(unit_number, unit_data, force)
+local function validity_check(unit_number, unit_data, force, ignore_power)
 	if not unit_data.entity.valid or not unit_data.powersource.valid or not unit_data.combinator.valid then
 		memory_unit_corruption(unit_number, unit_data)
 		return true
 	end
 	
-	if (not force and not has_power(unit_data.powersource, unit_data.entity)) or unit_data.overloaded_sprite then return true end
+	if not ignore_power and not force and not has_power(unit_data.powersource, unit_data.entity) then return true end
+	if unit_data.overloaded_sprite then return true end
+
 	return false
 end
 

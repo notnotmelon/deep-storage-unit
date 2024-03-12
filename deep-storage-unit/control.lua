@@ -7,6 +7,7 @@ local update_slots = shared.update_slots
 local compactify = shared.compactify
 local validity_check = shared.validity_check
 local clamp = shared.clamp
+local has_power = shared.has_power
 
 local beacons_max_count = {
 	["se-wide-beacon"] = 0,
@@ -111,23 +112,31 @@ function update_unit(unit_data, unit_number, force)
 	update_storage_effects(unit_data)
 	
 	unit_data.last_action = 0
-	if validity_check(unit_number, unit_data, force) then return end
+	if validity_check(unit_number, unit_data, force, true) then return end
 
-	local changed = false
-
+	
 	
 	if unit_data.item == nil then changed = detect_item(unit_data) end
 	local item = unit_data.item
 	
 	if item == nil then return end
-	local comfortable = unit_data.comfortable
 	
-	
-	
-	--- set i/o cap, 30/s for tier 0, additional 30/s for each speed module
-	local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.1)
-
 	local inventory_count = inventory.get_item_count(item)
+	
+	if unit_data.count and unit_data.powersource.energy < unit_data.powersource.electric_buffer_size * 0.5 then
+		-- seriously low power, start SLOWLY deleting items
+		unit_data.count = math.floor(unit_data.count * 0.9999 + 0.5)
+		update_unit_exterior(unit_data, inventory_count)
+		return
+	end
+
+	if not has_power(unit_data.powersource, unit_data.entity) then return end
+	
+	--- set i/o cap, scale up slightly to allow for some fuckery
+	local changed = false
+	local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.1)
+	local comfortable = unit_data.comfortable
+
 	if inventory_count > comfortable then
 		unit_data.last_action = comfortable - inventory_count
 		local amount_removed = inventory.remove { name = item, count = math.min(inventory_count - comfortable,max_conversion_speed) }
@@ -383,7 +392,7 @@ function update_storage_effects(unit_data)
 
 	local overload = false
 
-	for name, data in pairs(beacon_prototypes) do
+	for name, _ in pairs(beacon_prototypes) do
 		local beacons = unit.surface.find_entities_filtered { area = pad_area(unit.bounding_box, game.entity_prototypes[name].supply_area_distance), name = name }
 		
 		if global.se_enabled and beacons_max_count[name] and #beacons > beacons_max_count[name] then
