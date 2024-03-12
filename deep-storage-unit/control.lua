@@ -386,7 +386,7 @@ function update_storage_effects(unit_data)
 	for name, data in pairs(beacon_prototypes) do
 		local beacons = unit.surface.find_entities_filtered { area = pad_area(unit.bounding_box, game.entity_prototypes[name].supply_area_distance), name = name }
 		
-		if beacons_max_count[name] and #beacons > beacons_max_count[name] then
+		if global.se_enabled and beacons_max_count[name] and #beacons > beacons_max_count[name] then
 			overload_storage(unit_data,name)
 			overload = true
 			goto skip
@@ -404,7 +404,7 @@ function update_storage_effects(unit_data)
 		::skip::
 	end
 
-	if not overload and unit_data.overloaded_sprite then
+	if global.se_enabled and not overload and unit_data.overloaded_sprite then
 		overload_storage_clear(unit_data)
 	end
 	
