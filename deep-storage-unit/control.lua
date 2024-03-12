@@ -30,6 +30,11 @@ local function setup()
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit', true)
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit-combinator', true)
 	end
+
+	if remote.interfaces["space-exploration"] then
+		global.se_enabled = true
+		game.print({"chat-messages.se-enabled"})
+	end
 end
 script.on_init(setup)
 
@@ -403,13 +408,13 @@ function update_storage_effects(unit_data)
 		overload_storage_clear(unit_data)
 	end
 	
-	-- non se values
-	--unit_data.conversion_tier = clamp(math.floor(effects.speed * 4 + 0.5),12,0)
-	--unit_data.energy_tier = clamp(-math.floor(effects.energy * 2 + 0.5),8,0)
-
-	-- se values
-	unit_data.conversion_tier = clamp(math.floor(effects.speed/15 *16),16,0)
-	unit_data.energy_tier = clamp(math.floor((-effects.energy)/70 * 4),8,0)
+	if global.se_enabled then
+		unit_data.conversion_tier = clamp(math.floor(effects.speed/15 *16),16,0)
+		unit_data.energy_tier = clamp(math.floor((-effects.energy)/70 * 4),8,0)
+	else
+		unit_data.conversion_tier = clamp(math.floor(effects.speed * 4 + 0.5),12,0)
+		unit_data.energy_tier = clamp(-math.floor(effects.energy * 2 + 0.5),8,0)
+	end
 
 	local new_max_conversion_speed = (unit_data.conversion_tier + 1) * (update_rate * update_slots)/60 * 30
 	
