@@ -16,5 +16,8 @@
     "Lua.workspace.checkThirdParty": "ApplyInMemory",
     "Lua.diagnostics.globals": [
         "force"
+    ],
+    "Lua.diagnostics.disable": [
+        "need-check-nil"
     ]
 }

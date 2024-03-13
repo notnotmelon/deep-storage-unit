@@ -39,10 +39,10 @@ local function update_gui(gui, fresh_gui)
 	local unit_data = global.units[gui.tags.unit_number]
 	if not unit_data then gui.destroy() return end
 	local content_flow = gui.main_flow.content_frame.content_flow
-
+	
 	local memory_frame = gui.main_flow.memory_frame
 	local matter_conversion_frame = gui.main_flow.matter_conversion_frame
-
+	
 	local entity = unit_data.entity
 	local powersource = unit_data.powersource
 	
@@ -71,7 +71,8 @@ local function update_gui(gui, fresh_gui)
 	--- Memory UI
 	memory_frame.memory_electricity_flow.memory_electricity.value = powersource.energy / powersource.electric_buffer_size
 	memory_frame.memory_electricity_flow.memory_electricity_label.caption = format_energy(powersource.energy) .. ' / [font=default-semibold][color=255,230,192]' .. format_energy(powersource.electric_buffer_size) .. '[/color][/font]'
-	memory_frame.memory_header.memory_header_label.caption={"mod-gui.memory-tab-caption","T".. (unit_data.energy_tier or "?").."/8"}
+	memory_frame.memory_header.memory_header_flow.memory_header_tier_label.caption={"mod-gui.tier-info",unit_data.energy_tier or "?", 8}
+	memory_frame.memory_header.memory_header_flow.memory_header_tier_label.tooltip="Next tier in "..math.ceil(unit_data.energy_to_next_tier*100) .. "%"
 	
 	if unit_data.item then update_power_usage(unit_data, count + inventory_count) end
 
@@ -101,8 +102,7 @@ local function update_gui(gui, fresh_gui)
 		sprite.sprite="utility/status_yellow"
 		label.caption={"entity-status.low-power"}
 	else		
-		local energy_tier = unit_data.energy_tier
-		local warning_threshold = power_table.tier_borders[energy_tier]
+		local warning_threshold = power_table.tier_borders[unit_data.energy_tier]
 		if unit_data.count/unit_data.stack_size > warning_threshold then
 			sprite.sprite="utility/status_yellow"
 			label.caption={"entity-status.suboptimal"}
@@ -135,23 +135,27 @@ local function update_gui(gui, fresh_gui)
 	elseif unit_data.overloaded_sprite then
 		sprite.sprite = "utility/status_yellow"
 		label.caption = {"entity-status.invalid-beacon"}
-	elseif low_power then
-		sprite.sprite = "utility/status_yellow"
-		label.caption = {"entity-status.low-power"}
-		mark_warning(matter_conversion_frame.matter_conversion_header,true)
 	else
 		local max_count = (unit_data.inventory.get_bar() - 1) * unit_data.stack_size
 		local filled_percent = unit_data.inventory.get_item_count(unit_data.item) / max_count
 		matter_conversion_frame.matter_conversion_info_flow.matter_buffer.value = filled_percent
-		if filled_percent > 0.875 or (filled_percent < 0.125 and unit_data.count > 0) then
-		sprite.sprite = "utility/status_yellow"
-		label.caption = {"entity-status.overloaded"}
-		mark_warning(matter_conversion_frame.matter_conversion_header,true)
+		if low_power then
+			sprite.sprite = "utility/status_yellow"
+			label.caption = {"entity-status.low-power"}
+			mark_warning(matter_conversion_frame.matter_conversion_header,true)
 		else
-			sprite.sprite = "utility/status_working"
-			label.caption = {"entity-status.working"}
+			
+			if filled_percent > 0.875 or (filled_percent < 0.125 and unit_data.count > 0) then
+			sprite.sprite = "utility/status_yellow"
+			label.caption = {"entity-status.overloaded"}
+			mark_warning(matter_conversion_frame.matter_conversion_header,true)
+			else
+				sprite.sprite = "utility/status_working"
+				label.caption = {"entity-status.working"}
+			end
 		end
 	end
+
 
 	local last_action = unit_data.last_action or 0
 	local function states ()
@@ -166,8 +170,8 @@ local function update_gui(gui, fresh_gui)
 		' ' .. math.min(math.abs(last_action),unit_data.max_conversion_speed) .. ' / [font=default-semibold][color=255,230,192]' .. unit_data.max_conversion_speed .. '[/color][/font] items/s'
 	}
 	
-	matter_conversion_frame.matter_conversion_header.matter_conversion_header_label.caption={"mod-gui.matter-tab-caption","T".. (unit_data.conversion_tier or "?").."/12"}
-
+	matter_conversion_frame.matter_conversion_header.matter_conversion_header_flow.matter_conversion_header_tier_label.caption={"mod-gui.tier-info",(unit_data.conversion_tier or "?"),16}
+	matter_conversion_frame.matter_conversion_header.matter_conversion_header_flow.matter_conversion_header_tier_label.tooltip="Next tier in "..math.ceil(unit_data.conversion_to_next_tier*100) .. "%"
 
 	
 	--[[
@@ -305,7 +309,9 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	local memory_frame = main_flow.add{type = 'frame', name = 'memory_frame', direction = 'vertical', style = 'inside_shallow_frame'}
 	local memory_header = memory_frame.add{type="frame",name="memory_header", style = "subheader_frame"}
 	memory_header.style.horizontally_stretchable = true
-	memory_header.add{type="label",name="memory_header_label",style="subheader_caption_label",tooltip={"mod-gui.memory-tab-tooltip"}}
+	local memory_header_flow = memory_header.add{type="flow",name="memory_header_flow"}
+	memory_header_flow.add{type="label",name="memory_header_label",style="subheader_caption_label",tooltip={"mod-gui.memory-tab-tooltip"}, caption = {"mod-gui.matter-tab-caption"}}
+	memory_header_flow.add{type="label",name="memory_header_tier_label",style="subheader_caption_label"}
 
 	local memory_status_flow = memory_frame.add{type="flow",name="memory_status_flow",direction="horizontal"}
 	memory_status_flow.style.vertical_align = "center"
@@ -327,7 +333,9 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	local matter_conversion_frame = main_flow.add{type = 'frame', name = 'matter_conversion_frame', direction = 'vertical', style = 'inside_shallow_frame'}
 	local matter_conversion_header = matter_conversion_frame.add{type="frame",name="matter_conversion_header", style = "subheader_frame"}
 	matter_conversion_header.style.horizontally_stretchable = true
-	matter_conversion_header.add{type="label",name="matter_conversion_header_label",style="subheader_caption_label",tooltip={"mod-gui.matter-tab-tooltip"}}
+	local matter_conversion_header_flow = matter_conversion_header.add{type="flow",name="matter_conversion_header_flow"}
+	matter_conversion_header_flow.add{type="label",name="matter_conversion_header_label",style="subheader_caption_label",caption={"mod-gui.matter-tab-caption"},tooltip={"mod-gui.matter-tab-tooltip"}}
+	matter_conversion_header_flow.add{type="label",name="matter_conversion_header_tier_label",style="subheader_caption_label"}
 
 	local matter_conversion_status_flow = matter_conversion_frame.add{type="flow",name="matter_conversion_status_flow",direction="horizontal"}
 	matter_conversion_status_flow.style.vertical_align = "center"

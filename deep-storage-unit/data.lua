@@ -172,7 +172,6 @@ data:extend{
 		sprites = nothing,
 		activity_led_sprites = nothing,
 		activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
-		activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
 		selection_priority = 51,
 		placeable_by = {item = 'memory-unit', count = 0}
 	},

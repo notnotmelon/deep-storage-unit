@@ -380,6 +380,34 @@ function update_inventory_limits(unit_data)
 	unit_data.comfortable = unit_data.stack_size * inventory_limit / 2
 	unit_data.inventory.set_bar(inventory_limit + 1)
 end
+---Calculates the tiers for the two different cores of the storage
+---@param unit_data table
+function calculate_tiers(unit_data)
+	if not unit_data.effects then return end
+	if global.se_enabled then
+		unit_data.conversion_tier = clamp(math.floor(unit_data.effects.speed),16,0)
+		unit_data.energy_tier = clamp(math.floor((-unit_data.effects.energy)/72 * 4),8,0)
+	else
+		unit_data.conversion_tier = clamp(math.floor(unit_data.effects.speed * 4),16,0)
+		unit_data.energy_tier = clamp(-math.floor(unit_data.effects.energy * 2),8,0)
+	end
+end
+
+function calculate_needed(unit_data)
+	local conversion_tier, energy_tier = unit_data.conversion_tier,unit_data.energy_tier
+	
+	-- percentage needed for the next tier
+	if global.se_enabled then
+		conversion_tier = conversion_tier + 1
+		energy_tier = (energy_tier + 1) * 72
+	else
+		conversion_tier = (conversion_tier + 1) / 4
+		energy_tier = (energy_tier + 1) / 2
+	end
+
+	unit_data.conversion_to_next_tier = conversion_tier - unit_data.effects.speed
+	unit_data.energy_to_next_tier = energy_tier + unit_data.effects.energy -- energy is negative
+end
 
 function update_storage_effects(unit_data)
 	local unit = unit_data.entity
@@ -417,14 +445,11 @@ function update_storage_effects(unit_data)
 		overload_storage_clear(unit_data)
 	end
 	
-	if global.se_enabled then
-		unit_data.conversion_tier = clamp(math.floor(effects.speed/15 *16),16,0)
-		unit_data.energy_tier = clamp(math.floor((-effects.energy)/70 * 4),8,0)
-	else
-		unit_data.conversion_tier = clamp(math.floor(effects.speed * 4 + 0.5),12,0)
-		unit_data.energy_tier = clamp(-math.floor(effects.energy * 2 + 0.5),8,0)
-	end
+	unit_data.effects = effects
 
+	calculate_tiers(unit_data)
+	calculate_needed(unit_data)
+	
 	local new_max_conversion_speed = (unit_data.conversion_tier + 1) * (update_rate * update_slots)/60 * 30
 	
 	if unit_data.max_conversion_speed == new_max_conversion_speed then return end
