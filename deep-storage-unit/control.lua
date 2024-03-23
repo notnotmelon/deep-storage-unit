@@ -20,6 +20,7 @@ local beacons_max_count = {
 local update_storage_effects
 local pad_area
 local beacon_prototypes
+local apply_item_loss
 --#endregion
 
 --- Generates global units table
@@ -121,38 +122,10 @@ function update_unit(unit_data, unit_number, force)
 	
 	if item == nil then return end
 	
+	if apply_item_loss(unit_data) then return end
+
 	local inventory_count = inventory.get_item_count(item)
-	
-	if unit_data.count and unit_data.powersource.energy < unit_data.powersource.electric_buffer_size * 0.5 then
-		-- seriously low power, start SLOWLY deleting items
-		unit_data.count = math.floor(unit_data.count * 0.9999 + 0.5)
-		update_unit_exterior(unit_data, inventory_count)
 
-		if global.se_enabled then
-			signal = "virtual-signal/se-anomaly" -- the anomaly is just a cooler item that fits
-			rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=1.5,y_scale=1.5,tint={}}
-			rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30	}
-
-			for _,player in pairs(unit_data.entity.force.players) do
-				player.add_custom_alert(unit_data.entity,{type="virtual", name="se-anomaly"},
-				{"alert.power-outage-warning"},
-				true)
-			end
-		else
-			rendering.draw_sprite{sprite = "utility/warning_icon",surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=0.5,y_scale=0.5}
-			for _,player in pairs(unit_data.entity.force.players) do
-				player.add_custom_alert(unit_data.entity,{type="item", name="memory-unit"},
-				{"alert.power-outage-warning"},
-				true)
-			end
-		end
-
-
-		return
-	end
-
-	if not has_power(unit_data.powersource, unit_data.entity) then return end
-	
 	--- set i/o cap, scale up slightly to allow for some fuckery
 	local changed = false
 	local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.1)
@@ -389,6 +362,53 @@ function overload_storage_clear(unit_data)
 	end
 
 	unit_data.overloaded_sprite = nil
+end
+
+function apply_item_loss(unit_data)
+	local powersource = unit_data.powersource
+	local inventory = unit_data.inventory
+	local item = unit_data.item
+
+	if not item or not powersource or not unit_data.count then
+		return false --storage is not initialized yet or has invalid properties that prevent calculations
+	end
+
+	unit_data.containment_field = unit_data.containment_field or 240 --3 minutes of no item loss ##TODO make the max a setting
+
+	if powersource.energy >= powersource.electric_buffer_size * 0.5 then -- storage has enough power, do not leak items
+		if has_power(unit_data.powersource, unit_data.entity) then
+			unit_data.containment_field = math.min(unit_data.containment_field + 4,240)
+			return false
+		end
+	end 
+
+	if unit_data.containment_field > 0 then -- storage has remaining containment field, drain that and do not delete items
+		unit_data.containment_field = unit_data.containment_field - 1
+	else
+		local inventory_count = inventory.get_item_count(item) -- no containment field left, slowly delete items
+		unit_data.count = unit_data.count * 0.9999
+		update_unit_exterior(unit_data, inventory_count)
+
+		if global.se_enabled then
+			signal = "virtual-signal/se-anomaly" -- the anomaly is just a cooler item that fits
+			rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=1.5,y_scale=1.5,tint={}}
+			rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30}
+
+			for _,player in pairs(unit_data.entity.force.players) do
+				player.add_custom_alert(unit_data.entity,{type="virtual", name="se-anomaly"},
+				{"alert.power-outage-warning"},
+				true)
+			end
+		else
+			rendering.draw_sprite{sprite = "utility/warning_icon",surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=0.5,y_scale=0.5}
+			for _,player in pairs(unit_data.entity.force.players) do
+				player.add_custom_alert(unit_data.entity,{type="item", name="memory-unit"},
+				{"alert.power-outage-warning"},
+				true)
+			end
+		end
+	end
+	return true
 end
 
 function update_inventory_limits(unit_data)
