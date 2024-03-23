@@ -100,7 +100,7 @@ data:extend{
 		not_inventory_moveable = true,
 		inventory_type = 'with_filters_and_bar'
 	},
-	{
+	{ -- SE compat in data-final-fixes
 		type = 'recipe',
 		name = 'memory-unit',
 		ingredients = {
