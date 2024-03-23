@@ -48,7 +48,7 @@ script.on_configuration_changed(function()
 			local prototype = game.item_prototypes[unit_data.item]
 			if prototype then
 				unit_data.stack_size = prototype.stack_size
-				unit_data.comfortable = unit_data.stack_size * #unit_data.inventory / 2
+				update_inventory_limits(unit_data)
 			else
 				shared.memory_unit_corruption(unit_number, unit_data)
 			end
@@ -127,6 +127,27 @@ function update_unit(unit_data, unit_number, force)
 		-- seriously low power, start SLOWLY deleting items
 		unit_data.count = math.floor(unit_data.count * 0.9999 + 0.5)
 		update_unit_exterior(unit_data, inventory_count)
+
+		if global.se_enabled then
+			signal = "virtual-signal/se-anomaly" -- the anomaly is just a cooler item that fits
+			rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=1.5,y_scale=1.5,tint={}}
+			rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30	}
+
+			for _,player in pairs(unit_data.entity.force.players) do
+				player.add_custom_alert(unit_data.entity,{type="virtual", name="se-anomaly"},
+				{"alert.power-outage-warning"},
+				true)
+			end
+		else
+			rendering.draw_sprite{sprite = "utility/warning_icon",surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=0.5,y_scale=0.5}
+			for _,player in pairs(unit_data.entity.force.players) do
+				player.add_custom_alert(unit_data.entity,{type="item", name="memory-unit"},
+				{"alert.power-outage-warning"},
+				true)
+			end
+		end
+
+
 		return
 	end
 
@@ -218,8 +239,8 @@ local function on_created(event)
 		unit_data.count = tags.count
 		unit_data.item = tags.name
 		unit_data.stack_size = game.item_prototypes[tags.name].stack_size
-		unit_data.comfortable = unit_data.stack_size * #unit_data.inventory / 2
 		set_filter(unit_data)
+		update_inventory_limits(unit_data)
 		update_unit(unit_data, entity.unit_number, true)
 	else
 		shared.update_power_usage(unit_data, 0)
@@ -371,11 +392,17 @@ function overload_storage_clear(unit_data)
 end
 
 function update_inventory_limits(unit_data)
-	local inventory_limit = math.min(
-		--- we want to be able to buffer 8 cycles in either direction
-		math.ceil(unit_data.max_conversion_speed * 8 / unit_data.stack_size) * 2,
-		--- use inventory size as fallback
-		#unit_data.inventory)
+	local inventory_limit
+
+	if unit_data.max_conversion_speed then
+		inventory_limit = math.min(
+			--- we want to be able to buffer 8 cycles in either direction
+			math.ceil(unit_data.max_conversion_speed * 8 / unit_data.stack_size) * 2,
+			--- use inventory size as maximum
+			#unit_data.inventory)
+	else
+		inventory_limit = 2
+	end
 
 	unit_data.comfortable = unit_data.stack_size * inventory_limit / 2
 	unit_data.inventory.set_bar(inventory_limit + 1)
