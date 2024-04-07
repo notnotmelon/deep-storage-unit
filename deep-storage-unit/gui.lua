@@ -74,7 +74,9 @@ local function update_gui(gui, fresh_gui)
 	memory_frame.memory_containment_flow.memory_containment_strength.value = unit_data.containment_field / containment_field_max
 	memory_frame.memory_status_flow.memory_electricity_flow.memory_electricity_label.caption = format_energy(powersource.energy) .. ' / [font=default-semibold][color=255,230,192]' .. format_energy(powersource.electric_buffer_size) .. '[/color][/font]'
 	memory_frame.memory_header.memory_header_flow.memory_header_tier_label.caption={"mod-gui.tier-info",unit_data.energy_tier or "?", 8}
-	memory_frame.memory_header.memory_header_flow.memory_header_tier_label.tooltip={"mod-gui.memory-tab-tier-tooltip",-math.ceil(unit_data.energy_to_next_tier*100)}
+	if unit_data.energy_tier and unit_data.energy_tier < 8 then
+		memory_frame.memory_header.memory_header_flow.memory_header_tier_label.tooltip={"mod-gui.memory-tab-tier-tooltip",-math.ceil(unit_data.energy_to_next_tier*100)}
+	end
 	
 	if unit_data.item then update_power_usage(unit_data, count + inventory_count) end
 
@@ -184,7 +186,9 @@ local function update_gui(gui, fresh_gui)
 	}
 	
 	mc_frame.mc_header.mc_header_flow.mc_header_tier_label.caption={"mod-gui.tier-info",(unit_data.conversion_tier or "?"),16}
-	mc_frame.mc_header.mc_header_flow.mc_header_tier_label.tooltip={"mod-gui.matter-tab-tier-tooltip",math.ceil(unit_data.conversion_to_next_tier*100)}
+	if unit_data.conversion_tier and unit_data.conversion_tier < 16 then
+		mc_frame.mc_header.mc_header_flow.mc_header_tier_label.tooltip={"mod-gui.matter-tab-tier-tooltip",math.ceil(unit_data.conversion_to_next_tier*100)}
+	end
 
 	
 	--[[
