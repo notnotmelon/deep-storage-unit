@@ -273,7 +273,8 @@ script.on_event(defines.events.on_entity_cloned, function(event)
 		comfortable = unit_data.comfortable,
 		stack_size = unit_data.stack_size,
 		inventory = destination.get_inventory(defines.inventory.chest),
-		lag_id = math.random(0, update_slots - 1)
+		lag_id = math.random(0, update_slots - 1),
+		containment_field = unit_data.containment_field
 	}
 	global.units[destination.unit_number] = unit_data
 
