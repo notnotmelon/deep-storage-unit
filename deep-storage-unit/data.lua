@@ -111,7 +111,9 @@ data:extend{
 		},
 		result = 'memory-unit',
 		enabled = false,
-		category = "advanced-crafting"
+		category = "advanced-crafting",
+		energy_required = 200,
+		requester_paste_multiplier = 1
 	},
 	{
 		type = 'technology',
