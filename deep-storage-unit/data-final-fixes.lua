@@ -10,7 +10,7 @@ if mods["space-exploration"] then
         {'se-forcefield-data',5},
         {type="fluid", name="water", amount=100000},
     }
-    recipe.category = "advanced-crafting"
+    recipe.category = "space-manufacturing"
     
     local tech = data.raw.technology["memory-unit"]
     tech.prerequisites = {"se-holmium-solenoid","se-heavy-girder","se-astronomic-science-pack-1"}

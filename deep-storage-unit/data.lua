@@ -106,10 +106,12 @@ data:extend{
 		ingredients = {
 			{'steel-chest', 4},
 			{'energy-shield-equipment', 4},
-			{'effectivity-module', 16}
+			{'effectivity-module', 16},
+			{type="fluid", name="water", amount=100000}
 		},
 		result = 'memory-unit',
-		enabled = false
+		enabled = false,
+		category = "advanced-crafting"
 	},
 	{
 		type = 'technology',
