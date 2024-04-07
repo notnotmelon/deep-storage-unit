@@ -48,6 +48,8 @@ local function update_gui(gui, fresh_gui)
 	
 	if not entity.valid or not powersource.valid then return end
 	
+	local containment_field_max = settings.global["memory-unit-containment-field"].value
+
 	local count = unit_data.count
 	local inventory = unit_data.inventory
 	local deconstructed = entity.to_be_deconstructed()
@@ -69,7 +71,7 @@ local function update_gui(gui, fresh_gui)
 	content_flow.no_input_item.visible = not visible
 	
 	--- Memory UI
-	memory_frame.memory_containment_flow.memory_containment_strength.value = unit_data.containment_field / 240
+	memory_frame.memory_containment_flow.memory_containment_strength.value = unit_data.containment_field / containment_field_max
 	memory_frame.memory_status_flow.memory_electricity_flow.memory_electricity_label.caption = format_energy(powersource.energy) .. ' / [font=default-semibold][color=255,230,192]' .. format_energy(powersource.electric_buffer_size) .. '[/color][/font]'
 	memory_frame.memory_header.memory_header_flow.memory_header_tier_label.caption={"mod-gui.tier-info",unit_data.energy_tier or "?", 8}
 	memory_frame.memory_header.memory_header_flow.memory_header_tier_label.tooltip={"mod-gui.memory-tab-tier-tooltip",-math.ceil(unit_data.energy_to_next_tier*100)}
@@ -114,7 +116,7 @@ local function update_gui(gui, fresh_gui)
 			label.caption={"entity-status.suboptimal"}
 			mark_warning(memory_frame.memory_header,true)
 		else
-			if unit_data.containment_field < 240 then
+			if unit_data.containment_field < containment_field_max then
 				sprite.sprite="utility/status_working"
 				label.caption={"entity-status.charging"}
 			else

@@ -375,11 +375,12 @@ function apply_item_loss(unit_data)
 		return false --storage is not initialized yet or has invalid properties that prevent calculations
 	end
 
-	unit_data.containment_field = unit_data.containment_field or 240 --3 minutes of no item loss ##TODO make the max a setting
+	unit_data.containment_field = unit_data.containment_field --3 minutes of no item loss ##TODO make the max a setting
 
 	if powersource.energy >= powersource.electric_buffer_size * 0.5 then -- storage has enough power, do not leak items
 		if has_power(unit_data.powersource, unit_data.entity) then
-			unit_data.containment_field = math.min(unit_data.containment_field + 4,240)
+---@diagnostic disable-next-line: param-type-mismatch
+			unit_data.containment_field = math.min(unit_data.containment_field + 4,settings.global["memory-unit-containment-field"].value)
 			return false
 		end
 	end 
@@ -388,7 +389,7 @@ function apply_item_loss(unit_data)
 		unit_data.containment_field = unit_data.containment_field - 1
 	else
 		local inventory_count = inventory.get_item_count(item) -- no containment field left, slowly delete items
-		unit_data.count = unit_data.count * 0.9999
+		unit_data.count = unit_data.count * (1 - settings.global["memory-unit-item-loss"].value)
 		update_unit_exterior(unit_data, inventory_count)
 
 		if global.se_enabled then
