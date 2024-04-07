@@ -57,6 +57,20 @@ script.on_configuration_changed(function()
 	end
 end)
 
+script.on_event(defines.events.on_runtime_mod_setting_changed,
+	function (event)
+		if event.setting == "memory-unit-power-usage" then
+			for unit_number, unit_data in pairs(global.units) do
+				local total_count = unit_data.count
+				if unit_data.item then
+					total_count = total_count + unit_data.inventory.get_item_count(unit_data.item)
+				end
+				shared.update_power_usage(unit_data, total_count)
+			end
+		end
+	end
+)
+
 --- updates the circuit, display text and power usage
 ---@param unit_data table
 ---@param inventory_count number

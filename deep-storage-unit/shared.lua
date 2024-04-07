@@ -143,6 +143,7 @@ local function update_power_usage(unit_data, count)
 	local powersource = unit_data.powersource
 	local power_usage = power_table[unit_data.energy_tier or 0](math.ceil(count / (unit_data.stack_size or 1000))) / 60 * 1000
 	power_usage = power_usage + base_usage
+	power_usage = power_usage * settings.global['memory-unit-power-usage'].value
 	unit_data.operation_cost = power_usage
 
 	if unit_data.containment_field < settings.global["memory-unit-containment-field"].value then -- we need to charge the containment field, increase the power usage
@@ -211,7 +212,7 @@ local function memory_unit_corruption(unit_number, unit_data)
 	global.units[unit_number] = nil
 end
 
----returns whether the memory unit is considered functional (false if ok, true if not ok, corrupts broken units)
+---returns whether the memory unit is considered functional (false if ok, true if not ok. Also corrupts broken units)
 ---@param unit_number number
 ---@param unit_data table
 ---@param force LuaForce
