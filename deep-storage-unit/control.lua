@@ -163,7 +163,7 @@ function update_unit(unit_data, unit_number, force)
 		if unit_data.count < to_add then
 			to_add = unit_data.count
 		end
-		if to_add ~= 0 then
+		if to_add > 0 then
 			unit_data.last_action = comfortable - inventory_count
 			local amount_added = entity.insert { name = item, count = to_add }
 			unit_data.count = unit_data.count - amount_added
@@ -421,10 +421,17 @@ function apply_item_loss(unit_data)
 		end
 	end 
 
-	if unit_data.count > 0 then
 		if unit_data.containment_field > 0 then -- storage has remaining containment field, drain that and do not delete items
 			unit_data.containment_field = unit_data.containment_field - 1
+
+			rendering.draw_sprite{sprite = "utility/warning_icon",surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=0.5,y_scale=0.5}
+			for _,player in pairs(unit_data.entity.force.players) do
+				player.add_custom_alert(unit_data.entity,{type="item", name="energy-shield-equipment"},
+				{"alert.power-outage-warning"},
+				true)
+			end
 		else
+			if unit_data.count > 0 then
 			local inventory_count = inventory.get_item_count(item) -- no containment field left, slowly delete items
 			unit_data.count = unit_data.count * (1 - settings.global["memory-unit-item-loss"].value)
 			update_unit_exterior(unit_data, inventory_count)
@@ -436,14 +443,14 @@ function apply_item_loss(unit_data)
 				
 				for _,player in pairs(unit_data.entity.force.players) do
 					player.add_custom_alert(unit_data.entity,{type="virtual", name="se-anomaly"},
-					{"alert.power-outage-warning"},
+					{"alert.power-outage-critical"},
 					true)
 				end
 			else
 				rendering.draw_sprite{sprite = "utility/warning_icon",surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=0.5,y_scale=0.5}
 				for _,player in pairs(unit_data.entity.force.players) do
 					player.add_custom_alert(unit_data.entity,{type="item", name="memory-unit"},
-					{"alert.power-outage-warning"},
+					{"alert.power-outage-critical"},
 					true)
 				end
 			end

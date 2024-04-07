@@ -110,6 +110,7 @@ local function update_gui(gui, fresh_gui)
 		else
 			sprite.sprite="utility/status_not_working"
 			label.caption={"entity-status.voiding"}
+			mark_warning(memory_frame.memory_header,true)
 		end
 	else		
 		local warning_threshold = power_table.tier_borders[unit_data.energy_tier]
