@@ -202,7 +202,8 @@ local function on_created(event)
 		powersource = powersource,
 		combinator = combinator,
 		inventory = entity.get_inventory(defines.inventory.chest),
-		lag_id = math.random(0, update_slots - 1)
+		lag_id = math.random(0, update_slots - 1),
+		containment_field = 0
 	}
 	global.units[entity.unit_number] = unit_data
 
@@ -227,6 +228,7 @@ script.on_event(defines.events.on_robot_built_entity, on_created)
 script.on_event(defines.events.script_raised_built, on_created)
 script.on_event(defines.events.script_raised_revive, on_created)
 
+-- TODO: WTF does this do, and do I need to change it?
 script.on_event(defines.events.on_entity_cloned, function(event)
 	local entity = event.source
 	if entity.name ~= 'memory-unit' then return end
