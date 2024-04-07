@@ -100,6 +100,13 @@ function set_filter(unit_data)
 	end
 end
 
+local function set_item(unit_data, name)
+	unit_data.item = name
+	unit_data.stack_size = game.item_prototypes[name].stack_size
+	set_filter(unit_data)
+	update_inventory_limits(unit_data)
+end
+
 ---initializes empty units with an item type
 ---@param unit_data table
 ---@return boolean
@@ -107,10 +114,7 @@ local function detect_item(unit_data)
 	local inventory = unit_data.inventory
 	for name, count in pairs(inventory.get_contents()) do
 		if shared.check_for_basic_item(name) then
-			unit_data.item = name
-			unit_data.stack_size = game.item_prototypes[name].stack_size
-			set_filter(unit_data)
-			update_inventory_limits(unit_data)
+			set_item(unit_data,name)
 			return true
 		end
 	end
@@ -231,16 +235,33 @@ local function on_created(event)
 		update_inventory_limits(unit_data)
 		update_unit(unit_data, entity.unit_number, true)
 	else
+		if unit_data.inventory.get_filter(1) then
+			set_item(unit_data,unit_data.inventory.get_filter(1))
+		end
 		shared.update_power_usage(unit_data, 0)
 	end
 
 	update_storage_effects(unit_data)
 end
 
+function set_item_from_filter(unit_data)
+	if not unit_data.inventory or not unit_data.inventory.get_filter(1) then return end
+	local name = unit_data.inventory.get_filter(1)
+	set_item(unit_data,name)
+	update_unit_exterior(unit_data,unit_data.count + unit_data.inventory.get_item_count(unit_data.item))
+end
+
+script.on_event(defines.events.on_entity_settings_pasted, function (event)
+	entity = event.destination
+	set_item_from_filter(global.units[entity.unit_number])
+end)
+
 script.on_event(defines.events.on_built_entity, on_created)
 script.on_event(defines.events.on_robot_built_entity, on_created)
 script.on_event(defines.events.script_raised_built, on_created)
 script.on_event(defines.events.script_raised_revive, on_created)
+
+--script.on_event()
 
 -- TODO: WTF does this do, and do I need to change it?
 script.on_event(defines.events.on_entity_cloned, function(event)
@@ -400,33 +421,35 @@ function apply_item_loss(unit_data)
 		end
 	end 
 
-	if unit_data.containment_field > 0 then -- storage has remaining containment field, drain that and do not delete items
-		unit_data.containment_field = unit_data.containment_field - 1
-	else
-		local inventory_count = inventory.get_item_count(item) -- no containment field left, slowly delete items
-		unit_data.count = unit_data.count * (1 - settings.global["memory-unit-item-loss"].value)
-		update_unit_exterior(unit_data, inventory_count)
-
-		if global.se_enabled then
-			signal = "virtual-signal/se-anomaly" -- the anomaly is just a cooler item that fits
-			rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=1.5,y_scale=1.5,tint={}}
-			rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30}
-
-			for _,player in pairs(unit_data.entity.force.players) do
-				player.add_custom_alert(unit_data.entity,{type="virtual", name="se-anomaly"},
-				{"alert.power-outage-warning"},
-				true)
-			end
+	if unit_data.count > 0 then
+		if unit_data.containment_field > 0 then -- storage has remaining containment field, drain that and do not delete items
+			unit_data.containment_field = unit_data.containment_field - 1
 		else
-			rendering.draw_sprite{sprite = "utility/warning_icon",surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=0.5,y_scale=0.5}
-			for _,player in pairs(unit_data.entity.force.players) do
-				player.add_custom_alert(unit_data.entity,{type="item", name="memory-unit"},
-				{"alert.power-outage-warning"},
-				true)
+			local inventory_count = inventory.get_item_count(item) -- no containment field left, slowly delete items
+			unit_data.count = unit_data.count * (1 - settings.global["memory-unit-item-loss"].value)
+			update_unit_exterior(unit_data, inventory_count)
+			
+			if global.se_enabled then
+				signal = "virtual-signal/se-anomaly" -- the anomaly is just a cooler item that fits
+				rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=1.5,y_scale=1.5,tint={}}
+				rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30}
+				
+				for _,player in pairs(unit_data.entity.force.players) do
+					player.add_custom_alert(unit_data.entity,{type="virtual", name="se-anomaly"},
+					{"alert.power-outage-warning"},
+					true)
+				end
+			else
+				rendering.draw_sprite{sprite = "utility/warning_icon",surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=0.5,y_scale=0.5}
+				for _,player in pairs(unit_data.entity.force.players) do
+					player.add_custom_alert(unit_data.entity,{type="item", name="memory-unit"},
+					{"alert.power-outage-warning"},
+					true)
+				end
 			end
 		end
+		return true
 	end
-	return true
 end
 
 function update_inventory_limits(unit_data)
