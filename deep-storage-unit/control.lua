@@ -27,12 +27,12 @@ local apply_item_loss
 --- blacklists memory unit for picker dollies
 local function setup()
 	global.units = global.units or {}
-
+	
 	if remote.interfaces['PickerDollies'] then
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit', true)
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit-combinator', true)
 	end
-
+	
 	if remote.interfaces["space-exploration"] then
 		global.se_enabled = true
 		game.print({"chat-messages.se-enabled"})
@@ -58,17 +58,17 @@ script.on_configuration_changed(function()
 end)
 
 script.on_event(defines.events.on_runtime_mod_setting_changed,
-	function (event)
-		if event.setting == "memory-unit-power-usage" then
-			for unit_number, unit_data in pairs(global.units) do
-				local total_count = unit_data.count
-				if unit_data.item then
-					total_count = total_count + unit_data.inventory.get_item_count(unit_data.item)
-				end
-				shared.update_power_usage(unit_data, total_count)
+function (event)
+	if event.setting == "memory-unit-power-usage" then
+		for unit_number, unit_data in pairs(global.units) do
+			local total_count = unit_data.count
+			if unit_data.item then
+				total_count = total_count + unit_data.inventory.get_item_count(unit_data.item)
 			end
+			shared.update_power_usage(unit_data, total_count)
 		end
 	end
+end
 )
 
 --- updates the circuit, display text and power usage
@@ -78,7 +78,7 @@ local function update_unit_exterior(unit_data, inventory_count)
 	local entity = unit_data.entity
 	unit_data.previous_inventory_count = inventory_count
 	local total_count = unit_data.count + inventory_count
-
+	
 	local power_draw = shared.update_power_usage(unit_data, total_count)
 	shared.update_combinator(unit_data.combinator, { type = 'item', name = unit_data.item }, total_count, power_draw)
 	shared.update_display_text(unit_data, entity, compactify(total_count))
@@ -132,7 +132,7 @@ function update_unit(unit_data, unit_number, force)
 	
 	unit_data.last_action = 0
 	if validity_check(unit_number, unit_data, force, true) then return end
-
+	
 	
 	
 	if unit_data.item == nil then changed = detect_item(unit_data) end
@@ -141,14 +141,14 @@ function update_unit(unit_data, unit_number, force)
 	if item == nil then return end
 	
 	if apply_item_loss(unit_data) then return end
-
+	
 	local inventory_count = inventory.get_item_count(item)
-
+	
 	--- set i/o cap, scale up slightly to allow for some fuckery
 	local changed = false
 	local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.1)
 	local comfortable = unit_data.comfortable
-
+	
 	if inventory_count > comfortable then
 		unit_data.last_action = comfortable - inventory_count
 		local amount_removed = inventory.remove { name = item, count = math.min(inventory_count - comfortable,max_conversion_speed) }
@@ -170,9 +170,9 @@ function update_unit(unit_data, unit_number, force)
 			inventory_count = inventory_count + amount_added
 		end
 	end
-
+	
 	unit_data.last_action = unit_data.last_action or 0
-
+	
 	if force or changed then
 		inventory.sort_and_merge()
 		update_unit_exterior(unit_data, inventory_count)
@@ -181,7 +181,7 @@ end
 
 script.on_nth_tick(update_rate, function(event)
 	local smooth_ups = event.tick % update_slots
-
+	
 	for unit_number, unit_data in pairs(global.units) do
 		if unit_data.lag_id == smooth_ups then
 			update_unit(unit_data, unit_number)
@@ -192,28 +192,42 @@ end)
 local combinator_shift_x = 2.25
 local combinator_shift_y = 1.75
 
-local function on_created(event)
-	local entity = event.created_entity or event.entity
-	if entity.name ~= 'memory-unit' then return end
-	local position = entity.position
-	local surface = entity.surface
-	local force = entity.force
-
+local function create_combinator(surface,position,force)
 	local combinator = surface.create_entity {
 		name = 'memory-unit-combinator',
 		position = { position.x + combinator_shift_x, position.y + combinator_shift_y },
 		force = force
 	}
+
 	combinator.operable = false
 	combinator.destructible = false
 
+	return combinator
+end
+
+
+local function create_powersource(surface,position,force)
 	local powersource = surface.create_entity {
 		name = 'memory-unit-powersource',
 		position = position,
 		force = force
 	}
 	powersource.destructible = false
+	return powersource
+end
 
+
+local function on_created(event)
+	local entity = event.created_entity or event.entity
+	if entity.name ~= 'memory-unit' then return end
+	local position = entity.position
+	local surface = entity.surface
+	local force = entity.force
+	
+	local combinator = create_combinator(surface,position,force)
+	
+	local powersource = create_powersource(surface,position,force)
+	
 	local unit_data = {
 		entity = entity,
 		count = 0,
@@ -224,7 +238,7 @@ local function on_created(event)
 		containment_field = 0
 	}
 	global.units[entity.unit_number] = unit_data
-
+	
 	local stack = event.stack
 	local tags = stack and stack.valid_for_read and stack.type == 'item-with-tags' and stack.tags
 	if tags and tags.name then
@@ -240,7 +254,7 @@ local function on_created(event)
 		end
 		shared.update_power_usage(unit_data, 0)
 	end
-
+	
 	update_storage_effects(unit_data)
 end
 
@@ -261,41 +275,37 @@ script.on_event(defines.events.on_robot_built_entity, on_created)
 script.on_event(defines.events.script_raised_built, on_created)
 script.on_event(defines.events.script_raised_revive, on_created)
 
---script.on_event()
-
--- TODO: WTF does this do, and do I need to change it?
+-- Handles cloning the storage
 script.on_event(defines.events.on_entity_cloned, function(event)
 	local entity = event.source
+
 	if entity.name ~= 'memory-unit' then return end
 	local destination = event.destination
-
+	
 	local unit_data = global.units[entity.unit_number]
 	local position = destination.position
 	local surface = destination.surface
+	local force = destination.force
 
-	local powersource, combinator = unit_data.powersource, unit_data.combinator
-
-	if powersource.valid then
-		powersource = powersource.clone { position = position, surface = surface }
-	else
-		powersource = surface.create_entity {
-			name = 'memory-unit-powersource',
-			position = position,
-			force = force
-		}
-		powersource.destructible = false
+	-- we have to first try adopting components that already exist in the world. This is mostly because SpaceExploration spaceships will copy the components as well, which creates duplicates
+	local powersource = surface.find_entities_filtered{ position=position, name="memory-unit-powersource"}[1]
+	local combinator = surface.find_entities_filtered{ position={position.x + combinator_shift_x, position.y + combinator_shift_y}, name="memory-unit-combinator"}[1]
+	
+	if not powersource then
+		powersource = unit_data.powersource
+		if powersource.valid then
+			powersource = powersource.clone { position = position, surface = surface }
+		else
+			powersource = create_powersource(surface,position,force)
+		end
 	end
 
-	if combinator.valid then
-		combinator = combinator.clone { position = { position.x + combinator_shift_x, position.y + combinator_shift_y }, surface = surface }
-	else
-		combinator = surface.create_entity {
-			name = 'memory-unit-combinator',
-			position = { position.x + combinator_shift_x, position.y + combinator_shift_y },
-			force = force
-		}
-		combinator.destructible = false
-		combinator.operable = false
+	if not combinator then
+		if combinator.valid then
+			combinator = combinator.clone { position = { position.x + combinator_shift_x, position.y + combinator_shift_y }, surface = surface }
+		else
+			combinator = create_combinator(surface,position,force)
+		end
 	end
 
 	local item = unit_data.item
