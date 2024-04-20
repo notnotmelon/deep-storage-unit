@@ -289,7 +289,7 @@ script.on_event(defines.events.on_entity_cloned, function(event)
 	local surface = destination.surface
 	local force = destination.force
 
-	-- we have to first try adopting components that already exist in the world. This is mostly because SpaceExploration spaceships will copy the components as well, which creates duplicates
+	-- we have to first try to "adopt" components that already exist in the world. This is mostly because SpaceExploration spaceships will copy the components as well, which creates duplicates
 	local powersource = surface.find_entities_filtered{ position=position, name="memory-unit-powersource"}[1]
 	local combinator = surface.find_entities_filtered{ position={position.x + combinator_shift_x, position.y + combinator_shift_y}, name="memory-unit-combinator"}[1]
 	
