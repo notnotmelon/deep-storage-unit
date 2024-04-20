@@ -140,39 +140,40 @@ function update_unit(unit_data, unit_number, force)
 	
 	if item == nil then return end
 	
-	if apply_item_loss(unit_data) then return end
-	
-	local inventory_count = inventory.get_item_count(item)
-	
-	--- set i/o cap, scale up slightly to allow for some fuckery
-	local changed = false
-	local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.1)
-	local comfortable = unit_data.comfortable
-	
-	if inventory_count > comfortable then
-		unit_data.last_action = comfortable - inventory_count
-		local amount_removed = inventory.remove { name = item, count = math.min(inventory_count - comfortable,max_conversion_speed) }
-		unit_data.count = unit_data.count + amount_removed
-		inventory_count = inventory_count - amount_removed
-		changed = true
-	elseif inventory_count < comfortable then
-		if unit_data.previous_inventory_count ~= inventory_count then
-			changed = true
-		end
-		local to_add = math.min(comfortable - inventory_count,max_conversion_speed)
-		if unit_data.count < to_add then
-			to_add = unit_data.count
-		end
-		if to_add > 0 then
+	local inventory_count
+
+	if force or not apply_item_loss(unit_data) then -- skips applying item loss if the event was generated artificially
+		inventory_count = inventory.get_item_count(item)
+		
+		--- set i/o cap, scale up slightly to allow for some fuckery
+		local changed = false
+		local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.1)
+		local comfortable = unit_data.comfortable
+		
+		if inventory_count > comfortable then
 			unit_data.last_action = comfortable - inventory_count
-			local amount_added = entity.insert { name = item, count = to_add }
-			unit_data.count = unit_data.count - amount_added
-			inventory_count = inventory_count + amount_added
+			local amount_removed = inventory.remove { name = item, count = math.min(inventory_count - comfortable,max_conversion_speed) }
+			unit_data.count = unit_data.count + amount_removed
+			inventory_count = inventory_count - amount_removed
+			changed = true
+		elseif inventory_count < comfortable then
+			if unit_data.previous_inventory_count ~= inventory_count then
+				changed = true
+			end
+			local to_add = math.min(comfortable - inventory_count,max_conversion_speed)
+			if unit_data.count < to_add then
+				to_add = unit_data.count
+			end
+			if to_add > 0 then
+				unit_data.last_action = comfortable - inventory_count
+				local amount_added = entity.insert { name = item, count = to_add }
+				unit_data.count = unit_data.count - amount_added
+				inventory_count = inventory_count + amount_added
+			end
 		end
+		
+		unit_data.last_action = unit_data.last_action or 0
 	end
-	
-	unit_data.last_action = unit_data.last_action or 0
-	
 	if force or changed then
 		inventory.sort_and_merge()
 		update_unit_exterior(unit_data, inventory_count)
@@ -422,8 +423,6 @@ function apply_item_loss(unit_data)
 	if not item or not powersource or not unit_data.count then
 		return false --storage is not initialized yet or has invalid properties that prevent calculations
 	end
-
-	unit_data.containment_field = unit_data.containment_field --3 minutes of no item loss ##TODO make the max a setting
 
 	if powersource.energy >= powersource.electric_buffer_size * 0.5 then -- storage has enough power, do not leak items
 		if has_power(unit_data.powersource, unit_data.entity) then
