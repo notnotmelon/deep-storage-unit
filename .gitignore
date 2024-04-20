@@ -4,3 +4,5 @@ debugadapter*
 *.zip
 mod-list.json
 SE
+mod-settings.dat
+package-lock.json
