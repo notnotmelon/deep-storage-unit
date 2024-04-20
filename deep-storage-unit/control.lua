@@ -267,7 +267,9 @@ end
 
 script.on_event(defines.events.on_entity_settings_pasted, function (event)
 	entity = event.destination
-	set_item_from_filter(global.units[entity.unit_number])
+	if global.units[entity.unit_number] then
+		set_item_from_filter(global.units[entity.unit_number])
+	end
 end)
 
 script.on_event(defines.events.on_built_entity, on_created)
