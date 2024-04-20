@@ -141,12 +141,12 @@ function update_unit(unit_data, unit_number, force)
 	if item == nil then return end
 	
 	local inventory_count
+	local changed = false
 
 	if force or not apply_item_loss(unit_data) then -- skips applying item loss if the event was generated artificially
 		inventory_count = inventory.get_item_count(item)
 		
 		--- set i/o cap, scale up slightly to allow for some fuckery
-		local changed = false
 		local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.1)
 		local comfortable = unit_data.comfortable
 		
