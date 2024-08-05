@@ -1,12 +1,15 @@
 {
-  "name": "[internal-mod-name]",
-  "version": "0.0.0",
-  "title": "[MOD DISPLAY NAME]",
-  "author": "[YOUR MODS.FACTORIO.COM USERNAME]",
-  "homepage": "[HOMEPAGE/REPO URL]",
-  "description": "[SHORT DESCRIPTION]",
+  "name": "deep-storage-unit",
+  "version": "1.3.5",
+  "title": "Memory Storage",
+  "author": "notnotmelon",
+  "homepage": "https://github.com/notnotmelon/deep-storage-unit",
+  "description": "An alternative to warehouses. The Memory Unit can store an infinite amount of a single item type. The more items you store, the more power it will require!",
   "factorio_version": "1.1",
   "dependencies": [
-    "base"
+    "base",
+    "(?) Krastorio2",
+    "(?) PickerDollies",
+    "! logistic-memory-units"
   ]
 }
