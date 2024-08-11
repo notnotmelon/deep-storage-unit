@@ -1,9 +1,0 @@
-node_modules
-pnpm-lock.yaml
-debugadapter*
-*.zip
-mod-list.json
-SE
-mod-settings.dat
-package-lock.json
-mod-settings.dat
