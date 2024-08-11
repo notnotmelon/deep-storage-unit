@@ -387,7 +387,7 @@ script.on_event(defines.events.on_gui_opened, function(event)
 	mc_info_flow.style.horizontal_align = "right"
 	mc_info_flow.style.horizontally_stretchable = true
 	mc_info_flow.add{type="label",name="matter_buffer_label", caption = {"mod-gui.matter-tab-bar-caption"}}.style.right_margin = 4
-	mc_info_flow.add{type="progressbar",name="matter_buffer",style="mu_io_buffer_filled",tooltip = {'mod-gui.matter-tab-bar-tooltip'}}.style.width = 250
+	mc_info_flow.add{type="progressbar",name="matter_buffer",style="mu_io_buffer_filled"}.style.width = 250
 
 	update_gui(main_frame, true)
 	
