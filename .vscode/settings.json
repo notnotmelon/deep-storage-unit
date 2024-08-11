@@ -10,7 +10,6 @@
         "/home/fox/dev/factorio-modding/factorio/data"
     ],
     "Lua.workspace.userThirdParty": [
-        "/home/fox/.config/Code/User/workspaceStorage/37271137544ed3a4974fda29cd6a6cd3/justarandomgeek.factoriomod-debug/sumneko-3rd",
         "/home/fox/.config/Code/User/workspaceStorage/feddd0f8159c741e4ecdeaac0115bd63/justarandomgeek.factoriomod-debug/sumneko-3rd"
     ],
     "Lua.workspace.checkThirdParty": "ApplyInMemory",
