@@ -32,11 +32,6 @@ local function setup()
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit', true)
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit-combinator', true)
 	end
-	
-	if remote.interfaces["space-exploration"] then
-		global.se_enabled = true
-		game.print({"chat-messages.se-enabled"})
-	end
 end
 script.on_init(setup)
 
@@ -447,23 +442,15 @@ function apply_item_loss(unit_data)
 			unit_data.count = unit_data.count * (1 - settings.global["memory-unit-item-loss"].value)
 			update_unit_exterior(unit_data, inventory_count)
 			
-			if global.se_enabled then
-				signal = "virtual-signal/se-anomaly" -- the anomaly is just a cooler item that fits
-				rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=1.5,y_scale=1.5,tint={}}
-				rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30}
-				
-				for _,player in pairs(unit_data.entity.force.players) do
-					player.add_custom_alert(unit_data.entity,{type="virtual", name="se-anomaly"},
-					{"alert.power-outage-critical"},
-					true)
-				end
-			else
-				rendering.draw_sprite{sprite = "utility/warning_icon",surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=0.5,y_scale=0.5}
-				for _,player in pairs(unit_data.entity.force.players) do
-					player.add_custom_alert(unit_data.entity,{type="item", name="memory-unit"},
-					{"alert.power-outage-critical"},
-					true)
-				end
+			
+			signal = "virtual-signal/se-anomaly" -- the anomaly is just a cooler item that fits
+			rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30,x_scale=1.5,y_scale=1.5,tint={}}
+			rendering.draw_sprite{sprite = signal,surface = unit_data.entity.surface, target = unit_data.entity,time_to_live = 30}
+			
+			for _,player in pairs(unit_data.entity.force.players) do
+				player.add_custom_alert(unit_data.entity,{type="virtual", name="se-anomaly"},
+				{"alert.power-outage-critical"},
+				true)
 			end
 		end
 		return true
@@ -490,26 +477,18 @@ end
 ---@param unit_data table
 function calculate_tiers(unit_data)
 	if not unit_data.effects then return end
-	if global.se_enabled then
-		unit_data.conversion_tier = clamp(math.floor(unit_data.effects.speed),16,0)
-		unit_data.energy_tier = clamp(math.floor((-unit_data.effects.energy)/72 * 4),8,0)
-	else
-		unit_data.conversion_tier = clamp(math.floor(unit_data.effects.speed * 4),16,0)
-		unit_data.energy_tier = clamp(-math.floor(unit_data.effects.energy * 2),8,0)
-	end
+
+	unit_data.conversion_tier = clamp(math.floor(unit_data.effects.speed),16,0)
+	unit_data.energy_tier = clamp(math.floor((-unit_data.effects.energy)/72 * 4),8,0)
 end
 
 function calculate_needed(unit_data)
 	local conversion_tier, energy_tier = unit_data.conversion_tier,unit_data.energy_tier
 	
 	-- percentage needed for the next tier
-	if global.se_enabled then
-		conversion_tier = conversion_tier + 1
-		energy_tier = (energy_tier + 1) * 72
-	else
-		conversion_tier = (conversion_tier + 1) / 4
-		energy_tier = (energy_tier + 1) / 2
-	end
+
+	conversion_tier = conversion_tier + 1
+	energy_tier = (energy_tier + 1) * 72
 
 	unit_data.conversion_to_next_tier = conversion_tier - unit_data.effects.speed
 	unit_data.energy_to_next_tier = energy_tier + unit_data.effects.energy -- energy is negative
@@ -529,7 +508,7 @@ function update_storage_effects(unit_data)
 	for name, _ in pairs(beacon_prototypes) do
 		local beacons = unit.surface.find_entities_filtered { area = pad_area(unit.bounding_box, game.entity_prototypes[name].supply_area_distance), name = name }
 		
-		if global.se_enabled and beacons_max_count[name] and #beacons > beacons_max_count[name] then
+		if beacons_max_count[name] and #beacons > beacons_max_count[name] then
 			overload_storage(unit_data,name)
 			overload = true
 			goto skip
@@ -547,7 +526,7 @@ function update_storage_effects(unit_data)
 		::skip::
 	end
 
-	if global.se_enabled and not overload and unit_data.overloaded_sprite then
+	if not overload and unit_data.overloaded_sprite then
 		overload_storage_clear(unit_data)
 	end
 	
