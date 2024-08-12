@@ -1,5 +1,7 @@
 require 'gui-styles'
 
+require 'tipsntricks'
+
 local circuit_wire_connection_points = {
 	green = {0.25, -0.15},
 	red = {-0.15, 0.1}
