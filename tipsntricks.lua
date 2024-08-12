@@ -17,7 +17,7 @@ data:extend{{
     tag = '[item=beacon]',
     type = 'tips-and-tricks-item',
     category = 'memory-unit',
-    dependency = {"main"},
+    dependencies = {"main"},
     indent = 1,
     starting_status = 'locked',
     order='b'
@@ -26,7 +26,7 @@ data:extend{{
     tag = '[item=energy-shield-equipment]',
     type = 'tips-and-tricks-item',
     category = 'memory-unit',
-    dependency = {"main"},
+    dependencies = {"main"},
     indent = 1,
     starting_status = 'locked',
     order='c'
@@ -35,7 +35,7 @@ data:extend{{
     tag = '[item=red-wire]',
     type = 'tips-and-tricks-item',
     category = 'memory-unit',
-    dependency = {"main"},
+    dependencies = {"main"},
     indent = 1,
     starting_status = 'locked',
     order='d'
