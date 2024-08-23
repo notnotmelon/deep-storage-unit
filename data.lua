@@ -20,7 +20,7 @@ circuit_wire_connection_points = {
 }
 
 local nothing = {
-	filename = '__deep-storage-unit__/graphics/entity/nothing.png',
+	filename = '__deep-storage-unit-se__/graphics/entity/nothing.png',
 	priority = 'extra-high',
 	size = 1
 }
@@ -29,7 +29,7 @@ data:extend{
 	{
 		type = 'item',
 		name = 'memory-unit',
-		icon = '__deep-storage-unit__/graphics/icon/memory-unit.png',
+		icon = '__deep-storage-unit-se__/graphics/icon/memory-unit.png',
 		icon_size = 64,
 		icon_mipmaps = 4,
 		stack_size = 10,
@@ -37,18 +37,18 @@ data:extend{
 		order = 'c[memory-units]-a[memory-unit]',
 		subgroup = 'storage',
 		flags = {'primary-place-result'}
-	},
+	} --[[@as data.ItemPrototype]],
 	{
 		type = 'item-with-tags',
 		name = 'memory-unit-with-tags',
 		icons = {
 			{
-				icon = '__deep-storage-unit__/graphics/icon/memory-unit.png',
+				icon = '__deep-storage-unit-se__/graphics/icon/memory-unit.png',
 				icon_size = 64,
 				scale = 0.5
 			},
 			{
-				icon = '__deep-storage-unit__/graphics/icon/packing-tape-50.png',
+				icon = '__deep-storage-unit-se__/graphics/icon/packing-tape-50.png',
 				icon_size = 64,
 				icon_mipmaps = 4
 			}
@@ -60,22 +60,22 @@ data:extend{
 		localised_name = {'item-name.memory-unit-with-tags'},
 		localised_description = {'entity-description.memory-unit'},
 		flags = {'not-stackable', 'hidden'}
-	},
+	} --[[@as data.ItemWithTagsPrototype]],
 	{
 		type = 'container',
-		icon = '__deep-storage-unit__/graphics/icon/memory-unit.png',
+		icon = '__deep-storage-unit-se__/graphics/icon/memory-unit.png',
 		icon_size = 64,
 		icon_mipmaps = 4,
 		name = 'memory-unit',
 		inventory_size = 300,
 		picture = {
-			filename = '__deep-storage-unit__/graphics/entity/memory-unit.png',
+			filename = '__deep-storage-unit-se__/graphics/entity/memory-unit.png',
 			height = 256,
 			priority = 'high',
 			width = 256,
 			shift = {0.59375, 0},
 			hr_version = {
-				filename = '__deep-storage-unit__/graphics/entity/hr-memory-unit.png',
+				filename = '__deep-storage-unit-se__/graphics/entity/hr-memory-unit.png',
 				height = 512,
 				priority = 'high',
 				width = 512,
@@ -101,7 +101,7 @@ data:extend{
 		se_allow_in_space = true,
 		not_inventory_moveable = true,
 		inventory_type = 'with_filters_and_bar'
-	},
+	} --[[@as data.ContainerPrototype]],
 	{ -- SE compat in data-final-fixes
 		type = 'recipe',
 		name = 'memory-unit',
@@ -116,11 +116,11 @@ data:extend{
 		category = "advanced-crafting",
 		energy_required = 200,
 		requester_paste_multiplier = 1
-	},
+	} --[[@as data.RecipePrototype]],
 	{
 		type = 'technology',
 		name = 'memory-unit',
-		icon = '__deep-storage-unit__/graphics/technology/memory-unit.png',
+		icon = '__deep-storage-unit-se__/graphics/technology/memory-unit.png',
 		icon_size = 128,
 		effects = {{
 			recipe = 'memory-unit',
@@ -140,7 +140,7 @@ data:extend{
 			},
 			time = 30
 		}
-	},
+	} --[[@as data.TechnologyPrototype]],
 	{
 		type = 'electric-energy-interface',
 		localised_name = {'entity-name.memory-unit'},
@@ -152,7 +152,7 @@ data:extend{
 		},
 		energy_usage = '1000W',
 		collision_box = {{-2.7, -2.7}, {2.7, 2.7}},
-		icon = '__deep-storage-unit__/graphics/icon/memory-unit.png',
+		icon = '__deep-storage-unit-se__/graphics/icon/memory-unit.png',
 		icon_size = 64,
 		icon_mipmaps = 4,
 		collision_mask = {},
@@ -160,14 +160,14 @@ data:extend{
 		remove_decoratives = 'false',
 		name = 'memory-unit-powersource',
 		flags = {'placeable-neutral', 'hidden', 'not-selectable-in-game', 'not-rotatable', 'not-flammable', 'placeable-off-grid'}
-	},
+	} --[[@as data.ElectricEnergyInterfacePrototype]],
 	{
 		circuit_wire_connection_points = circuit_wire_connection_points,
 		circuit_wire_max_distance = 9,
 		collision_box = {{-0.5, -0.5}, {0.5, 0.5}},
 		selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
 		flags = {'placeable-neutral', 'hidden', 'not-deconstructable', 'not-flammable', 'not-upgradable', 'not-rotatable', 'hide-alt-info', 'placeable-off-grid'},
-		icon = '__deep-storage-unit__/graphics/icon/memory-unit.png',
+		icon = '__deep-storage-unit-se__/graphics/icon/memory-unit.png',
 		icon_size = 64,
 		icon_mipmaps = 4,
 		item_slot_count = 2,
@@ -180,7 +180,7 @@ data:extend{
 		activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
 		selection_priority = 51,
 		placeable_by = {item = 'memory-unit', count = 0}
-	},
+	} --[[@as data.ConstantCombinatorPrototype]],
 	{
 		type = 'item-with-inventory', -- this is a hack to show the player's inventory gui.
 		name = 'blank-gui-item',
@@ -191,19 +191,19 @@ data:extend{
 		icon_size = 1,
 		localised_name = '',
 		flags = {'hidden', 'not-stackable'}
-	},
+	} --[[@as data.ItemWithInventoryPrototype]],
 	{
 		type = 'sprite',
 		name = 'bulk-insert',
-		filename = '__deep-storage-unit__/graphics/icon/insert.png',
+		filename = '__deep-storage-unit-se__/graphics/icon/insert.png',
 		size = {100, 100},
 		flags = {'gui-icon'}
-	},
+	} --[[@as data.SpritePrototype]],
 	{
 		type = 'sprite',
 		name = 'bulk-extract',
-		filename = '__deep-storage-unit__/graphics/icon/extract.png',
+		filename = '__deep-storage-unit-se__/graphics/icon/extract.png',
 		size = {100, 100},
 		flags = {'gui-icon'}
-	}
+	} --[[@as data.SpritePrototype]]
 }

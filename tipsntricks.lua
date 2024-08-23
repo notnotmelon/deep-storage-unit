@@ -9,7 +9,7 @@ data:extend{{
     },
     indent = 0,
     starting_status = 'locked',
-    image = '__deep-storage-unit__/graphics/entity/hr-memory-unit.png',
+    image = '__deep-storage-unit-se__/graphics/entity/hr-memory-unit.png',
     is_title = true,
     order="a"
 },{
