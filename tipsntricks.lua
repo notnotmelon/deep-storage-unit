@@ -1,4 +1,4 @@
-data:extend{{
+data:extend { {
     type = 'tips-and-tricks-item',
     name = 'main',
     tag = '[item=memory-unit]',
@@ -11,32 +11,32 @@ data:extend{{
     starting_status = 'locked',
     image = '__deep-storage-unit-se__/graphics/entity/hr-memory-unit.png',
     is_title = true,
-    order="a"
-},{
+    order = "a"
+} --[[@as data.TipsAndTricksItem]], {
     name = 'moduling',
     tag = '[item=beacon]',
     type = 'tips-and-tricks-item',
     category = 'memory-unit',
-    dependencies = {"main"},
+    dependencies = { "main" },
     indent = 1,
     starting_status = 'locked',
-    order='b'
-},{
+    order = 'b'
+} --[[@as data.TipsAndTricksItem]], {
     name = 'containment',
     tag = '[item=energy-shield-equipment]',
     type = 'tips-and-tricks-item',
     category = 'memory-unit',
-    dependencies = {"main"},
+    dependencies = { "main" },
     indent = 1,
     starting_status = 'locked',
-    order='c'
-},{
+    order = 'c'
+} --[[@as data.TipsAndTricksItem]], {
     name = 'logic',
     tag = '[item=red-wire]',
     type = 'tips-and-tricks-item',
     category = 'memory-unit',
-    dependencies = {"main"},
+    dependencies = { "main" },
     indent = 1,
     starting_status = 'locked',
-    order='d'
-}}
+    order = 'd'
+} --[[@as data.TipsAndTricksItem]] }
