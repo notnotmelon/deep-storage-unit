@@ -143,10 +143,10 @@ local function update_power_usage(unit_data, count)
 	local powersource = unit_data.powersource
 	local power_usage = power_table[unit_data.energy_tier or 0](math.ceil(count / (unit_data.stack_size or 1000))) / 60 * 1000
 	power_usage = power_usage + base_usage
-	power_usage = power_usage * settings.global['memory-unit-power-usage'].value
+	power_usage = power_usage * settings.global['memory-unit-se-power-usage'].value
 	unit_data.operation_cost = power_usage
 
-	if unit_data.containment_field < settings.global["memory-unit-containment-field"].value then -- we need to charge the containment field, increase the power usage
+	if unit_data.containment_field < settings.global["memory-unit-se-containment-field"].value then -- we need to charge the containment field, increase the power usage
 		power_usage = power_usage * 1.2
 	end
 
