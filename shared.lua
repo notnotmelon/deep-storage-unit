@@ -3,7 +3,7 @@
 local min = math.min
 local floor = math.floor
 
-local clamp = function (x,upper,lower)
+function clamp (x,upper,lower)
 	return math.min(upper,math.max(lower,x))
 end
 
@@ -126,13 +126,13 @@ end
 
 local power_usages = {
 	['0W'] = 0,
-	['60kW'] = 1000,
-	['180kW'] = 3000,
-	['300kW'] = 5000,
-	['480kW'] = 8000,
-	['600kW'] = 10000,
-	['1.2MW'] = 20000,
-	['2.4MW'] = 40000
+	['60kW'] = 0.2,
+	['180kW'] = 0.6,
+	['300kW'] = 1,
+	['480kW'] = 1.6,
+	['600kW'] = 2,
+	['1.2MW'] = 4,
+	['2.4MW'] = 8
 }
 
 local base_usage = 1000000 / 60
@@ -143,7 +143,7 @@ local function update_power_usage(unit_data, count)
 	local powersource = unit_data.powersource
 	local power_usage = power_table[unit_data.energy_tier or 0](math.ceil(count / (unit_data.stack_size or 1000))) / 60 * 1000
 	power_usage = power_usage + base_usage
-	power_usage = power_usage * settings.global['memory-unit-se-power-usage'].value
+	power_usage = power_usage * power_usages[(settings.global['memory-unit-power-usage']).value]
 	unit_data.operation_cost = power_usage
 
 	if unit_data.containment_field < settings.global["memory-unit-se-containment-field"].value then -- we need to charge the containment field, increase the power usage
