@@ -1,9 +1,9 @@
 {
 	"name": "deep-storage-unit-se",
 	"version": "0.0.1",
-	"title": "Memory Storage (Fox Fork)",
+	"title": "Memory Storage SE Addition",
 	"author": "notnotmelon, UpsideDownFoxxo",
-	"description": "An alternative to warehouses. The Memory Unit can store an infinite amount of a single item type. The more items you store, the more power it will require!",
+	"description": "Rework of the Memory Units mod to make it better fit into the SE gameplay and tech tree.",
 	"factorio_version": "1.1",
 	"dependencies": ["base", "(?) PickerDollies", "! logistic-memory-units", "! deep-storage-unit", "space-exploration"]
 }
