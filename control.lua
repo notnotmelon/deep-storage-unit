@@ -142,7 +142,7 @@ function update_unit(unit_data, unit_number, force)
 		inventory_count = inventory.get_item_count(item)
 		
 		--- set i/o cap, scale up slightly to allow for some fuckery
-		local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.1)
+		local max_conversion_speed = math.ceil(unit_data.max_conversion_speed * 1.05)
 		local comfortable = unit_data.comfortable
 		
 		if inventory_count > comfortable then
@@ -516,7 +516,7 @@ function update_storage_effects(unit_data)
 		for _,beacon in pairs(beacons) do
 			if beacon.energy == 0 then goto continue end
 			if beacon.effects then
-				local effectivity =  game.entity_prototypes[beacon.type].distribution_effectivity
+				local effectivity =  game.entity_prototypes[beacon.name].distribution_effectivity
 				effects.speed = effects.speed + ((beacon.effects.speed or {bonus=0}).bonus) * effectivity
 				effects.energy = effects.energy + ((beacon.effects.consumption or {bonus=0}).bonus) * effectivity
 			end
@@ -534,7 +534,7 @@ function update_storage_effects(unit_data)
 	calculate_tiers(unit_data)
 	calculate_needed(unit_data)
 	
-	local new_max_conversion_speed = (unit_data.conversion_tier + 1) * (update_rate * update_slots)/60 * 30
+	local new_max_conversion_speed = (unit_data.conversion_tier + 2) * (update_rate * update_slots)/60 * 60
 	
 	if unit_data.max_conversion_speed == new_max_conversion_speed then return end
 	

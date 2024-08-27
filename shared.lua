@@ -8,15 +8,15 @@ function clamp (x,upper,lower)
 end
 
 local tier_borders = {
-	[0] =     1000,
-	[1] =     4000,
-	[2] =    16000,
-	[3] =    64000,
-	[4] =   256000,
-	[5] =  1024000,
-	[6] =  4096000,
-	[7] = 16384000,
-	[8] = 65536000
+	[0] =    4000,
+	[1] =    8000,
+	[2] =   16000,
+	[3] =   32000,
+	[4] =   64000,
+	[5] =  128000,
+	[6] =  256000,
+	[7] =  512000,
+	[8] = 1024000
 }
 
 local base_graphs = {
@@ -42,7 +42,7 @@ power_table[0] = base_graphs[0]
 
 for i = 1,8,1 do
 	transition_heights[i] = - base_graphs[i](tier_borders[i-1]) + power_table[i-1](tier_borders[i-1])
-power_table[i] = function (x) return transition_heights[i] + base_graphs[i](x) end
+	power_table[i] = function (x) return transition_heights[i] + base_graphs[i](x) end
 end
 
 ---turns a number into a human readable number
