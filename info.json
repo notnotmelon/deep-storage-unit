@@ -1,9 +1,10 @@
 {
 	"name": "deep-storage-unit-se",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"title": "Memory Storage SE Addition",
-	"author": "notnotmelon, UpsideDownFoxxo",
+	"author": "UpsideDownFoxxo, notnotmelon, kaueNP",
 	"description": "Rework of the Memory Units mod to make it better fit into the SE gameplay and tech tree.",
 	"factorio_version": "1.1",
-	"dependencies": ["base", "(?) PickerDollies", "! logistic-memory-units", "! deep-storage-unit", "space-exploration"]
+	"dependencies": ["base", "(?) PickerDollies", "! logistic-memory-units", "! deep-storage-unit", "space-exploration"],
+	"homepage": "https://github.com/UpsideDownFoxxo/deep-storage-unit-se"
 }
