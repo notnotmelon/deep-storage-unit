@@ -10,6 +10,7 @@
     "base",
     "(?) Krastorio2",
     "(?) PickerDollies",
-    "! logistic-memory-units"
+    "! logistic-memory-units",
+    "! space-exploration"
   ]
 }
