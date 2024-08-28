@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.5.2
+Date: 2024-08-28
+  Compatibility:
+    - Added incompatiblity with Space Exploration. Please use the fork instead https://mods.factorio.com/mod/deep-storage-unit-se-fox
+---------------------------------------------------------------------------------------------------
 Version: 1.5.1
 Date: 2024-08-27
   Bugfixes:
