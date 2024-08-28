@@ -146,7 +146,7 @@ local function update_power_usage(unit_data, count)
 	power_usage = power_usage * power_usages[(settings.global['memory-unit-power-usage']).value]
 	unit_data.operation_cost = power_usage
 
-	if unit_data.containment_field < settings.global["memory-unit-se-containment-field"].value then -- we need to charge the containment field, increase the power usage
+	if unit_data.containment_field < settings.global["memory-unit-se-fox-containment-field"].value then -- we need to charge the containment field, increase the power usage
 		power_usage = power_usage * 1.2
 	end
 

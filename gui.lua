@@ -48,7 +48,7 @@ local function update_gui(gui, fresh_gui)
 	
 	if not entity.valid or not powersource.valid then return end
 	
-	local containment_field_max = settings.global["memory-unit-se-containment-field"].value
+	local containment_field_max = settings.global["memory-unit-se-fox-containment-field"].value
 
 	local count = unit_data.count
 	local inventory = unit_data.inventory

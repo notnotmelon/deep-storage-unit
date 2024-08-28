@@ -8,14 +8,14 @@ data:extend{
 	},
 	{
 		type = 'int-setting',
-		name = 'memory-unit-se-containment-field',
+		name = 'memory-unit-se-fox-containment-field',
 		setting_type = 'runtime-global',
 		default_value = 120,
 		minimum_value = 60
 	},
 	{
 		type = 'double-setting',
-		name = 'memory-unit-se-item-loss',
+		name = 'memory-unit-se-fox-item-loss',
 		setting_type = 'runtime-global',
 		default_value = 0.001,
 		minimum_value = 0,

@@ -54,7 +54,7 @@ end)
 
 script.on_event(defines.events.on_runtime_mod_setting_changed,
 function (event)
-	if event.setting == "memory-unit-se-power-usage" then
+	if event.setting == "memory-unit-se-fox-power-usage" then
 		for unit_number, unit_data in pairs(global.units) do
 			local total_count = unit_data.count
 			if unit_data.item then
@@ -421,7 +421,7 @@ function apply_item_loss(unit_data)
 	if powersource.energy >= powersource.electric_buffer_size * 0.5 then -- storage has enough power, do not leak items
 		if has_power(unit_data.powersource, unit_data.entity) then
 ---@diagnostic disable-next-line: param-type-mismatch
-			unit_data.containment_field = math.min(unit_data.containment_field + 4,settings.global["memory-unit-se-containment-field"].value)
+			unit_data.containment_field = math.min(unit_data.containment_field + 4,settings.global["memory-unit-se-fox-containment-field"].value)
 			return false
 		end
 	end 
@@ -438,7 +438,7 @@ function apply_item_loss(unit_data)
 		else
 			if unit_data.count > 0 then
 			local inventory_count = inventory.get_item_count(item) -- no containment field left, slowly delete items
-			unit_data.count = unit_data.count * (1 - settings.global["memory-unit-se-item-loss"].value)
+			unit_data.count = unit_data.count * (1 - settings.global["memory-unit-se-fox-item-loss"].value)
 			update_unit_exterior(unit_data, inventory_count)
 			
 			
