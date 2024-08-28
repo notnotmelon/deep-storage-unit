@@ -186,8 +186,8 @@ local function update_gui(gui, fresh_gui)
 		' ' .. math.min(math.abs(last_action),unit_data.max_conversion_speed) .. ' / [font=default-semibold][color=255,230,192]' .. unit_data.max_conversion_speed .. '[/color][/font] items/s'
 	}
 	
-	mc_frame.mc_header.mc_header_flow.mc_header_tier_label.caption={"mod-gui.tier-info",(unit_data.conversion_tier or "?"),16}
-	if unit_data.conversion_tier and unit_data.conversion_tier < 16 then
+	mc_frame.mc_header.mc_header_flow.mc_header_tier_label.caption={"mod-gui.tier-info",(unit_data.conversion_tier or "?"),17}
+	if unit_data.conversion_tier and unit_data.conversion_tier < 17 then
 		mc_frame.mc_header.mc_header_flow.mc_header_tier_label.tooltip={"mod-gui.matter-tab-tier-tooltip",math.ceil(unit_data.conversion_to_next_tier*100)}
 	end
 

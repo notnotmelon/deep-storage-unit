@@ -477,7 +477,7 @@ end
 function calculate_tiers(unit_data)
 	if not unit_data.effects then return end
 
-	unit_data.conversion_tier = clamp(math.floor(unit_data.effects.speed),16,0)
+	unit_data.conversion_tier = clamp(math.floor(unit_data.effects.speed),17,0)
 	unit_data.energy_tier = clamp(math.floor((-unit_data.effects.energy)/72 * 4),8,0)
 end
 
@@ -534,7 +534,7 @@ function update_storage_effects(unit_data)
 	calculate_tiers(unit_data)
 	calculate_needed(unit_data)
 	
-	local new_max_conversion_speed = (unit_data.conversion_tier + 2) * (update_rate * update_slots)/60 * 60
+	local new_max_conversion_speed = (unit_data.conversion_tier + 1) * (update_rate * update_slots)/60 * 60
 	
 	if unit_data.max_conversion_speed == new_max_conversion_speed then return end
 	
