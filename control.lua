@@ -20,7 +20,26 @@ local beacons_max_count = {
 local update_storage_effects
 local pad_area
 local apply_item_loss
+local update_storage_beacons
 --#endregion
+
+local function pickersetup()
+	if remote.interfaces["PickerDollies"] and remote.interfaces["PickerDollies"]["dolly_moved_entity_id"] then
+		script.on_event(remote.call("PickerDollies", "dolly_moved_entity_id"), function(event)
+			---@diagnostic disable-next-line: undefined-field
+			local entity = event.moved_entity --[[@as LuaEntity]]
+			if entity.type == "beacon" then
+				local surface = entity.surface
+
+				local affected_storages = surface.find_entities_filtered { area = pad_area(entity.bounding_box, game.entity_prototypes[entity.name].supply_area_distance + 1), name = "memory-unit" }
+			
+				for _, value in pairs(affected_storages) do
+					update_storage_beacons(global.units[value.unit_number], entity.name)
+				end
+			end
+		end)
+	end
+end
 
 --- Generates global units table
 --- blacklists memory unit for picker dollies
@@ -31,8 +50,12 @@ local function setup()
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit', true)
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit-combinator', true)
 	end
+
+	pickersetup()
 end
+
 script.on_init(setup)
+script.on_load(pickersetup)
 
 --- Reloads units on config change, saves units with broken items
 script.on_configuration_changed(function()
@@ -256,18 +279,15 @@ end
 
 local function on_created_beacon(event)
 	if not global.beacon_prototypes then
-		game.print("hi"); global.beacon_prototypes = game.get_filtered_entity_prototypes { { filter = "type", type = "beacon" } }
+		global.beacon_prototypes = game.get_filtered_entity_prototypes { { filter = "type", type = "beacon" } }
 	end
 	local entity = event.created_entity or event.entity --[[@as LuaEntity]]
 	local surface = entity.surface
 
-	game.print(game.entity_prototypes[entity.name].supply_area_distance)
-
 	local affected_storages = surface.find_entities_filtered { area = pad_area(entity.bounding_box, game.entity_prototypes[entity.name].supply_area_distance), name = "memory-unit" }
 
 	for _, value in pairs(affected_storages) do
-		game.print(value.position)
-		update_storage_beacons(global.units[value.unit_number],entity.name)
+		update_storage_beacons(global.units[value.unit_number], entity.name)
 	end
 end
 
@@ -301,19 +321,20 @@ script.on_event(defines.events.script_raised_revive, on_created)
 
 -- Handles cloning the storage
 script.on_event(defines.events.on_entity_cloned, function(event)
-	local entity = event.source
+	local source = event.source
 
-	if entity.name ~= 'memory-unit' then return end
+	if source.name ~= 'memory-unit' then return end
 	local destination = event.destination
 
-	local unit_data = global.units[entity.unit_number]
+	local unit_data = global.units[source.unit_number]
 	local position = destination.position
 	local surface = destination.surface
 	local force = destination.force
 
 	-- we have to first try to "adopt" components that already exist in the world. This is mostly because SpaceExploration spaceships will copy the components as well, which creates duplicates
 	local powersource = surface.find_entities_filtered { position = position, name = "memory-unit-powersource" }[1]
-	local combinator = surface.find_entities_filtered { position = { position.x + combinator_shift_x, position.y + combinator_shift_y }, name = "memory-unit-combinator" }[1]
+	local combinator = surface.find_entities_filtered { position = { position.x + combinator_shift_x, position.y + combinator_shift_y }, name = "memory-unit-combinator" }
+	[1]
 
 	if not powersource then
 		powersource = unit_data.powersource
@@ -326,11 +347,12 @@ script.on_event(defines.events.on_entity_cloned, function(event)
 
 	if not combinator then
 		if combinator.valid then
-			combinator = combinator.clone { position = { position.x + combinator_shift_x, position.y + combinator_shift_y }, surface = surface }
+			combinator = combinator.clone { position = { position.x + combinator_shift_x, position.y+ combinator_shift_y }, surface = surface }
 		else
 			combinator = create_combinator(surface, position, force)
 		end
 	end
+
 
 	local item = unit_data.item
 	unit_data = {
@@ -345,6 +367,15 @@ script.on_event(defines.events.on_entity_cloned, function(event)
 		lag_id = math.random(0, update_slots - 1),
 		containment_field = unit_data.containment_field
 	}
+
+	if not global.beacon_prototypes then
+		global.beacon_prototypes = game.get_filtered_entity_prototypes { { filter = "type", type = "beacon" } }
+	end
+
+	for name, _ in pairs(global.beacon_prototypes) do
+		update_storage_beacons(unit_data,name)
+	end
+
 	global.units[destination.unit_number] = unit_data
 
 	if item then
@@ -383,18 +414,15 @@ end
 
 local function on_destroyed_beacon(event)
 	if not global.beacon_prototypes then
-		game.print("hi"); global.beacon_prototypes = game.get_filtered_entity_prototypes { { filter = "type", type = "beacon" } }
+		global.beacon_prototypes = game.get_filtered_entity_prototypes { { filter = "type", type = "beacon" } }
 	end
 	local entity = event.entity --[[@as LuaEntity]]
 	local surface = entity.surface
 
-	game.print(game.entity_prototypes[entity.name].supply_area_distance)
-
 	local affected_storages = surface.find_entities_filtered { area = pad_area(entity.bounding_box, game.entity_prototypes[entity.name].supply_area_distance), name = "memory-unit" }
 
 	for _, value in pairs(affected_storages) do
-		game.print(value.position)
-		update_storage_beacons(global.units[value.unit_number],entity.name,entity.unit_number)
+		update_storage_beacons(global.units[value.unit_number], entity.name, entity.unit_number)
 	end
 end
 
@@ -478,7 +506,7 @@ function apply_item_loss(unit_data)
 		if has_power(unit_data.powersource, unit_data.entity) then
 			---@diagnostic disable-next-line: param-type-mismatch
 			unit_data.containment_field = math.min(unit_data.containment_field + 4,
----@diagnostic disable-next-line: param-type-mismatch
+				---@diagnostic disable-next-line: param-type-mismatch
 				settings.global["memory-unit-se-fox-containment-field"].value)
 			return false
 		end
@@ -560,18 +588,10 @@ function update_storage_beacons(unit_data, name, exclude)
 
 	if exclude then
 		for i, value in pairs(unit_data.beacons[name]) do
-	
 			if value.unit_number == exclude then
 				unit_data.beacons[name][i] = nil
 			end
-
 		end
-	end
-
-	game.print(name)
-
-	for type, value in pairs(unit_data.beacons) do
-		game.print("Type " .. type .. " : " .. #value)
 	end
 
 	if beacons_max_count[name] and unit_data.beacons[name] and #unit_data.beacons[name] > beacons_max_count[name] then
