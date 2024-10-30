@@ -37,28 +37,34 @@ end
 
 local function update_display_text(unit_data, entity, localised_string)
 	if unit_data.text then
-		rendering.set_text(unit_data.text, localised_string)
-	else
-		unit_data.text = rendering.draw_text {
-			surface = entity.surface,
-			target = entity,
-			text = localised_string,
-			alignment = "center",
-			scale = 1.5,
-			only_in_alt_mode = true,
-			color = {r = 1, g = 1, b = 1}
-		}
+		local render_object = rendering.get_object_by_id(unit_data.text)
+		if render_object then
+			render_object.text = localised_string
+			return
+		end
 	end
+		
+	unit_data.text = rendering.draw_text {
+		surface = entity.surface,
+		target = entity,
+		text = localised_string,
+		alignment = "center",
+		scale = 1.5,
+		only_in_alt_mode = true,
+		color = {r = 1, g = 1, b = 1}
+	}.id
 end
 
 local function update_combinator(combinator, signal, count)
 	local control = combinator.get_or_create_control_behavior()
 	count = min(2147483647, count),
-	control.get_section(1).set_slot(1, {
+	game.print(count)
+	--[[control.get_section(1).set_slot(1, {
 		value = signal,
 		min = count,
 		max = count,
-	})
+		count = count
+	})--]]
 end
 
 local power_usages = {
