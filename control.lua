@@ -57,7 +57,14 @@ function set_filter(unit_data)
 		}
 		
 		if not inventory.set_filter(i, filter) or (stack.valid_for_read and (stack.name ~= item or stack.quality ~= quality)) then
-			entity.surface.spill_item_stack(entity.position, stack)
+			entity.surface.spill_item_stack{
+				position = entity.position,
+				stack = stack,
+				enable_looted = true,
+				force = entity.force_index,
+				allow_belts = false,
+				use_start_position_on_failure = true,
+			}
 			stack.clear()
 			inventory.set_filter(i, filter)
 		end
