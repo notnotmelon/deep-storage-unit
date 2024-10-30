@@ -127,7 +127,7 @@ local combinator_shift_x = 2.25
 local combinator_shift_y = 1.75
 
 local function on_created(event)
-	local entity = event.created_entity or event.entity
+	local entity = event.entity
 	if entity.name ~= "memory-unit" then return end
 	local position = entity.position
 	local surface = entity.surface
@@ -153,6 +153,7 @@ local function on_created(event)
 		count = 0,
 		powersource = powersource,
 		combinator = combinator,
+		quality = nil,
 		inventory = entity.get_inventory(defines.inventory.chest),
 		lag_id = math.random(0, update_slots - 1)
 	}
@@ -176,6 +177,7 @@ script.on_event(defines.events.on_built_entity, on_created)
 script.on_event(defines.events.on_robot_built_entity, on_created)
 script.on_event(defines.events.script_raised_built, on_created)
 script.on_event(defines.events.script_raised_revive, on_created)
+script.on_event(defines.events.on_space_platform_built_entity, on_created)
 
 script.on_event(defines.events.on_entity_cloned, function(event)
 	local entity = event.source
@@ -261,6 +263,7 @@ script.on_event(defines.events.on_player_mined_entity, on_destroyed)
 script.on_event(defines.events.on_robot_mined_entity, on_destroyed)
 script.on_event(defines.events.on_entity_died, on_destroyed)
 script.on_event(defines.events.script_raised_destroy, on_destroyed)
+script.on_event(defines.events.on_space_platform_mined_entity, on_destroyed)
 
 local function pre_mined(event)
 	local entity = event.entity
