@@ -46,21 +46,30 @@ function set_filter(unit_data)
 	local inventory = unit_data.inventory
 	local item = unit_data.item
 	local entity = unit_data.entity
+	local quality = unit_data.quality
+
 	for i = 1, #inventory do
 		local stack = inventory[i]
-		if not inventory.set_filter(i, item) or (stack.valid_for_read and stack.name ~= item) then
+		local filter = {
+			name = item,
+			quality = quality
+		}
+		
+		if not inventory.set_filter(i, filter) or (stack.valid_for_read and (stack.name ~= item or stack.quality ~= quality)) then
 			entity.surface.spill_item_stack(entity.position, stack)
 			stack.clear()
-			inventory.set_filter(i, item)
+			inventory.set_filter(i, filter)
 		end
 	end
 end
 
 local function detect_item(unit_data)
 	local inventory = unit_data.inventory
-	for name, count in pairs(inventory.get_contents()) do
+	for _, itemstack in pairs(inventory.get_contents()) do
+		local name, quality = itemstack.name, itemstack.quality
 		if shared.check_for_basic_item(name) then
 			unit_data.item = name
+			unit_data.quality = quality
 			unit_data.stack_size = prototypes.item[name].stack_size
 			unit_data.comfortable = unit_data.stack_size * #inventory / 2
 			set_filter(unit_data)
@@ -85,10 +94,14 @@ function update_unit(unit_data, unit_number, force)
 	local item = unit_data.item
 	if item == nil then return end
 	local comfortable = unit_data.comfortable
+	local quality = unit_data.quality
 
-	local inventory_count = inventory.get_item_count(item)
+	local inventory_count = inventory.get_item_count{
+		name = item,
+		quality = quality
+	}
 	if inventory_count > comfortable then
-		local amount_removed = inventory.remove {name = item, count = inventory_count - comfortable}
+		local amount_removed = inventory.remove {name = item, count = inventory_count - comfortable, quality = quality}
 		unit_data.count = unit_data.count + amount_removed
 		inventory_count = inventory_count - amount_removed
 		changed = true
@@ -101,7 +114,7 @@ function update_unit(unit_data, unit_number, force)
 			to_add = unit_data.count
 		end
 		if to_add ~= 0 then
-			local amount_added = entity.insert {name = item, count = to_add}
+			local amount_added = entity.insert {name = item, count = to_add, quality = quality}
 			unit_data.count = unit_data.count - amount_added
 			inventory_count = inventory_count + amount_added
 		end
@@ -136,7 +149,8 @@ local function on_created(event)
 	local combinator = surface.create_entity {
 		name = "memory-unit-combinator",
 		position = {position.x + combinator_shift_x, position.y + combinator_shift_y},
-		force = force
+		force = force,
+		quality = entity.quality
 	}
 	combinator.operable = false
 	combinator.destructible = false
@@ -144,7 +158,8 @@ local function on_created(event)
 	local powersource = surface.create_entity {
 		name = "memory-unit-powersource",
 		position = position,
-		force = force
+		force = force,
+		quality = entity.quality
 	}
 	powersource.destructible = false
 

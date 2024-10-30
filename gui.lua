@@ -23,14 +23,27 @@ local function update_gui(gui, fresh_gui)
 	local deconstructed = entity.to_be_deconstructed()
 	local inventory_count = 0
 	if unit_data.item then
-		inventory_count = inventory.get_item_count(unit_data.item)
+		inventory_count = inventory.get_item_count{
+			name = unit_data.item,
+			quality = unit_data.quality,
+		}
+
 		if fresh_gui or not deconstructed then
 			content_flow.storage_flow.content_sprite.sprite = "item/" .. unit_data.item
-			content_flow.storage_flow.current_storage.caption = {
-				"",
-				{"", "[font=default-semibold][color=255,230,192]", prototypes.item[unit_data.item].localised_name},
-				{"", ":[/color][/font] ",                          compactify(count + inventory_count)}
-			}
+			if unit_data.quality and prototypes.quality[unit_data.quality] and prototypes.quality[unit_data.quality].level ~= 0 then
+				content_flow.storage_flow.current_storage.caption = {
+					"",
+					{"", "[font=default-semibold][color=255,230,192]", prototypes.item[unit_data.item].localised_name},
+					{"", " (",                                          prototypes.quality[unit_data.quality].localised_name, ")"},
+					{"", ":[/color][/font] ",                          compactify(count + inventory_count)}
+				}
+			else
+				content_flow.storage_flow.current_storage.caption = {
+					"",
+					{"", "[font=default-semibold][color=255,230,192]", prototypes.item[unit_data.item].localised_name},
+					{"", ":[/color][/font] ",                          compactify(count + inventory_count)}
+				}
+			end
 		end
 	end
 	local visible = not not unit_data.item
@@ -174,12 +187,17 @@ local function bulk_io(event, element)
 	if not item then return end
 
 	local count = (event.button == defines.mouse_button_type.right) and unit_data.stack_size * #inventory or unit_data.stack_size
+	local quality = unit_data.quality
+
 	if element.name == "bulk_insert" then -- insert
-		local amount_removed = inventory.remove {name = item, count = count}
+		local amount_removed = inventory.remove {name = item, count = count, quality = quality}
 		unit_data.count = unit_data.count + amount_removed
 	elseif element.name == "bulk_extract" then -- extract
 		local unit_inventory = unit_data.inventory
-		local inventory_count = unit_inventory.get_item_count(item)
+		local inventory_count = unit_inventory.get_item_count{
+			name = item,
+			quality = quality,
+		}
 
 		if inventory_count + unit_data.count < count then -- not enough items are in storage
 			count = inventory_count + unit_data.count
@@ -187,10 +205,10 @@ local function bulk_io(event, element)
 
 		if count == 0 then return end
 
-		local amount_inserted = inventory.insert {name = item, count = count}
+		local amount_inserted = inventory.insert {name = item, count = count, quality = quality}
 		unit_data.count = unit_data.count - amount_inserted
 		if unit_data.count < 0 then
-			unit_inventory.remove {name = item, count = -unit_data.count}
+			unit_inventory.remove {name = item, count = -unit_data.count, quality = quality}
 			unit_data.count = 0
 		end
 	end
@@ -206,6 +224,7 @@ local function prime_unit(event, element)
 
 	unit_data.count = stack.count
 	unit_data.item = stack.name
+	unit_data.quality = stack.quality.name
 	unit_data.stack_size = stack.prototype.stack_size
 	unit_data.comfortable = unit_data.stack_size * #unit_data.inventory / 2
 	set_filter(unit_data)
