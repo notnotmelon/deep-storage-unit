@@ -29,6 +29,7 @@ data:extend {
 		name = "memory-unit",
 		icon = "__deep-storage-unit__/graphics/icon/memory-unit.png",
 		icon_size = 64,
+		weight = 10000000,
 		icon_mipmaps = 4,
 		stack_size = 10,
 		place_result = "memory-unit",
@@ -51,6 +52,7 @@ data:extend {
 				icon_mipmaps = 4
 			}
 		},
+		weight = 10000000,
 		stack_size = 1,
 		place_result = "memory-unit",
 		order = "c[memory-units]-a[memory-unit-with-tags]",
