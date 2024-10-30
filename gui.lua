@@ -7,7 +7,7 @@ local function format_energy(energy)
 end
 
 local function update_gui(gui, fresh_gui)
-	local unit_data = global.units[gui.tags.unit_number]
+	local unit_data = storage.units[gui.tags.unit_number]
 	if not unit_data then gui.destroy() return end
 	local content_flow = gui.content_frame.content_flow
 	local entity = unit_data.entity
@@ -166,7 +166,7 @@ end)
 local function bulk_io(event, element)
 	local player = game.get_player(event.player_index)
 	local inventory = player.get_main_inventory()
-	local unit_data = global.units[element.tags.unit_number]
+	local unit_data = storage.units[element.tags.unit_number]
 	local item = unit_data.item
 	if not item then return end
 	
@@ -199,7 +199,7 @@ local function prime_unit(event, element)
 	local player = game.get_player(event.player_index)
 	local stack = player.cursor_stack
 	if not stack.valid_for_read or not shared.check_for_basic_item(stack.name) then return end
-	local unit_data = global.units[element.tags.unit_number]
+	local unit_data = storage.units[element.tags.unit_number]
 	
 	unit_data.count = stack.count
 	unit_data.item = stack.name

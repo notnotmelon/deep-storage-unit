@@ -7,7 +7,7 @@ local compactify = shared.compactify
 local validity_check = shared.validity_check
 
 local function setup()
-	global.units = global.units or {}
+	storage.units = storage.units or {}
 	
 	if remote.interfaces['PickerDollies'] then
 		remote.call('PickerDollies', 'add_blacklist_name', 'memory-unit', true)
@@ -19,7 +19,7 @@ script.on_init(setup)
 script.on_configuration_changed(function()
 	setup()
                                
-	for unit_number, unit_data in pairs(global.units) do
+	for unit_number, unit_data in pairs(storage.units) do
 		if unit_data.item and not validity_check(unit_number, unit_data) then
 			local prototype = game.item_prototypes[unit_data.item]
 			if prototype then
@@ -116,7 +116,7 @@ end
 script.on_nth_tick(update_rate, function(event)
 	local smooth_ups = event.tick % update_slots
 	
-	for unit_number, unit_data in pairs(global.units) do
+	for unit_number, unit_data in pairs(storage.units) do
 		if unit_data.lag_id == smooth_ups then
 			update_unit(unit_data, unit_number)
 		end
@@ -156,7 +156,7 @@ local function on_created(event)
 		inventory = entity.get_inventory(defines.inventory.chest),
 		lag_id = math.random(0, update_slots - 1)
 	}
-	global.units[entity.unit_number] = unit_data
+	storage.units[entity.unit_number] = unit_data
 
 	local stack = event.stack
 	local tags = stack and stack.valid_for_read and stack.type == 'item-with-tags' and stack.tags
@@ -182,7 +182,7 @@ script.on_event(defines.events.on_entity_cloned, function(event)
 	if entity.name ~= 'memory-unit' then return end
 	local destination = event.destination
 	
-	local unit_data = global.units[entity.unit_number]
+	local unit_data = storage.units[entity.unit_number]
 	local position = destination.position
 	local surface = destination.surface
 	
@@ -223,11 +223,11 @@ script.on_event(defines.events.on_entity_cloned, function(event)
 		inventory = destination.get_inventory(defines.inventory.chest),
 		lag_id = math.random(0, update_slots - 1)
 	}
-	global.units[destination.unit_number] = unit_data
+	storage.units[destination.unit_number] = unit_data
                
 	if item then
 		set_filter(unit_data)
-		update_unit(global.units[destination.unit_number], destination.unit_number, true)
+		update_unit(storage.units[destination.unit_number], destination.unit_number, true)
 	end
 end)
 
@@ -235,8 +235,8 @@ local function on_destroyed(event)
 	local entity = event.entity
 	if entity.name ~= 'memory-unit' then return end
 	
-	local unit_data = global.units[entity.unit_number]
-	global.units[entity.unit_number] = nil
+	local unit_data = storage.units[entity.unit_number]
+	storage.units[entity.unit_number] = nil
 	unit_data.powersource.destroy()
 	unit_data.combinator.destroy()
 	
@@ -266,7 +266,7 @@ local function pre_mined(event)
 	local entity = event.entity
 	if entity.name ~= 'memory-unit' then return end
 	
-	local unit_data = global.units[entity.unit_number]
+	local unit_data = storage.units[entity.unit_number]
 	local item = unit_data.item
 	
 	if item then

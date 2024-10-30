@@ -24,14 +24,14 @@ local function compactify(n)
 end
 
 local function open_inventory(player)
-	if not global.blank_gui_item then
+	if not storage.blank_gui_item then
 		local inventory = game.create_inventory(1)
 		inventory[1].set_stack('blank-gui-item')
 		inventory[1].allow_manual_label_change = false
-		global.empty_gui_item = inventory[1]
+		storage.empty_gui_item = inventory[1]
 	end
 	player.opened = nil
-	player.opened = global.empty_gui_item
+	player.opened = storage.empty_gui_item
 	return player.opened
 end
 
@@ -106,7 +106,7 @@ end
 
 local basic_item_types = {['item'] = true, ['capsule'] = true, ['gun'] = true, ['rail-planner'] = true, ['module'] = true}
 local function check_for_basic_item(item)
-	local items_with_metadata = global.items_with_metadata
+	local items_with_metadata = storage.items_with_metadata
 	if not items_with_metadata then
 		items_with_metadata = {}
 		for item_name, prototype in pairs(game.item_prototypes) do
@@ -114,7 +114,7 @@ local function check_for_basic_item(item)
 				items_with_metadata[item_name] = true
 			end
 		end
-		global.items_with_metadata = items_with_metadata
+		storage.items_with_metadata = items_with_metadata
 	end
 	return not items_with_metadata[item]
 end
@@ -129,7 +129,7 @@ local function memory_unit_corruption(unit_number, unit_data)
 	if combinator.valid then combinator.destroy() end
 	
 	game.print{'memory-unit-corruption', unit_data.count, unit_data.item or 'nothing'}
-	global.units[unit_number] = nil
+	storage.units[unit_number] = nil
 end
 
 local function validity_check(unit_number, unit_data, force)
