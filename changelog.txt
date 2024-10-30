@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.2
+Date: 2024-10-30
+  Bugfixes:
+    - Fixed crash related to spill_item_stack(). Resolves [#3](https://github.com/notnotmelon/deep-storage-unit/issues/3)
+---------------------------------------------------------------------------------------------------
 Version: 1.6.1
 Date: 2024-10-30
   Bugfixes:
