@@ -57,7 +57,8 @@ data:extend{
 		subgroup = 'storage',
 		localised_name = {'item-name.memory-unit-with-tags'},
 		localised_description = {'entity-description.memory-unit'},
-		flags = {'not-stackable', 'hidden'}
+		flags = {"not-stackable"},
+		hidden = true,
 	},
 	{
 		type = 'container',
@@ -104,11 +105,11 @@ data:extend{
 		type = 'recipe',
 		name = 'memory-unit',
 		ingredients = {
-			{'steel-chest', 4},
-			{'energy-shield-equipment', 4},
-			{'effectivity-module', 16}
+			{type = 'item', name = 'steel-chest', amount = 4},
+			{type = 'item', name = 'energy-shield-equipment', amount = 4},
+			{type = 'item', name = 'efficiency-module', amount = 16}
 		},
-		result = 'memory-unit',
+		results = {{type = 'item', name = 'memory-unit', amount = 1}},
 		enabled = false
 	},
 	{
@@ -122,7 +123,7 @@ data:extend{
 		}},
 		prerequisites = {
 			'energy-shield-equipment',
-			'effectivity-module',
+			'efficiency-module',
 			'chemical-science-pack'
 		},
 		unit = {
@@ -149,25 +150,27 @@ data:extend{
 		icon = '__deep-storage-unit__/graphics/icon/memory-unit.png',
 		icon_size = 64,
 		icon_mipmaps = 4,
-		collision_mask = {},
+		collision_mask = {layers = {}},
 		selectable_in_game = false,
 		remove_decoratives = 'false',
 		name = 'memory-unit-powersource',
-		flags = {'placeable-neutral', 'hidden', 'not-selectable-in-game', 'not-rotatable', 'not-flammable', 'placeable-off-grid'}
+		flags = {"placeable-neutral", "not-selectable-in-game", "not-rotatable", "not-flammable", "placeable-off-grid"},
+		hidden = true,
 	},
 	{
 		circuit_wire_connection_points = circuit_wire_connection_points,
 		circuit_wire_max_distance = 9,
 		collision_box = {{-0.5, -0.5}, {0.5, 0.5}},
 		selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
-		flags = {'placeable-neutral', 'hidden', 'not-deconstructable', 'not-flammable', 'not-upgradable', 'not-rotatable', 'hide-alt-info', 'placeable-off-grid'},
+		flags = {"placeable-neutral", "not-deconstructable", "not-flammable", "not-upgradable", "not-rotatable", "hide-alt-info", "placeable-off-grid"},
+		hidden = true,
 		icon = '__deep-storage-unit__/graphics/icon/memory-unit.png',
 		icon_size = 64,
 		icon_mipmaps = 4,
 		item_slot_count = 1,
 		name = 'memory-unit-combinator',
 		type = 'constant-combinator',
-		collision_mask = {},
+		collision_mask = {layers = {}},
 		remove_decoratives = 'false',
 		sprites = nothing,
 		activity_led_sprites = nothing,
@@ -185,7 +188,8 @@ data:extend{
 		icon = '__core__/graphics/empty.png',
 		icon_size = 1,
 		localised_name = '',
-		flags = {'hidden', 'not-stackable'}
+		flags = {'not-stackable'},
+		hidden = true,
 	},
 	{
 		type = 'sprite',
