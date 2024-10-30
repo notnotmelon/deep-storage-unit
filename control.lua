@@ -285,3 +285,4 @@ end
 script.on_event(defines.events.on_pre_player_mined_item, pre_mined)
 script.on_event(defines.events.on_robot_pre_mined, pre_mined)
 script.on_event(defines.events.on_marked_for_deconstruction, pre_mined)
+script.on_event(defines.events.on_space_platform_pre_mined, pre_mined)
