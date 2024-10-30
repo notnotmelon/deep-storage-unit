@@ -28,7 +28,7 @@ local function update_gui(gui, fresh_gui)
 			content_flow.storage_flow.content_sprite.sprite = "item/" .. unit_data.item
 			content_flow.storage_flow.current_storage.caption = {
 				"",
-				{"", "[font=default-semibold][color=255,230,192]", game.item_prototypes[unit_data.item].localised_name},
+				{"", "[font=default-semibold][color=255,230,192]", prototypes.item[unit_data.item].localised_name},
 				{"", ":[/color][/font] ",                          compactify(count + inventory_count)}
 			}
 		end
@@ -54,7 +54,7 @@ local function update_gui(gui, fresh_gui)
 	elseif not unit_data.item then
 		for name, _ in pairs(inventory.get_contents()) do
 			if not shared.check_for_basic_item(name) then
-				status = {"entity-status.cannot-store", game.item_prototypes[name].localised_name}
+				status = {"entity-status.cannot-store", prototypes.item[name].localised_name}
 				img = "utility/status_not_working"
 				content_flow.electric_flow.consumption.caption = ""
 				goto cannot_store

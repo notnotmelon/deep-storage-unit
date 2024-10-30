@@ -21,7 +21,7 @@ script.on_configuration_changed(function()
 
 	for unit_number, unit_data in pairs(storage.units) do
 		if unit_data.item and not validity_check(unit_number, unit_data) then
-			local prototype = game.item_prototypes[unit_data.item]
+			local prototype = prototypes.item[unit_data.item]
 			if prototype then
 				unit_data.stack_size = prototype.stack_size
 				unit_data.comfortable = unit_data.stack_size * #unit_data.inventory / 2
@@ -61,7 +61,7 @@ local function detect_item(unit_data)
 	for name, count in pairs(inventory.get_contents()) do
 		if shared.check_for_basic_item(name) then
 			unit_data.item = name
-			unit_data.stack_size = game.item_prototypes[name].stack_size
+			unit_data.stack_size = prototypes.item[name].stack_size
 			unit_data.comfortable = unit_data.stack_size * #inventory / 2
 			set_filter(unit_data)
 			return true
@@ -163,7 +163,7 @@ local function on_created(event)
 	if tags and tags.name then
 		unit_data.count = tags.count
 		unit_data.item = tags.name
-		unit_data.stack_size = game.item_prototypes[tags.name].stack_size
+		unit_data.stack_size = prototypes.item[tags.name].stack_size
 		unit_data.comfortable = unit_data.stack_size * #unit_data.inventory / 2
 		set_filter(unit_data)
 		update_unit(unit_data, entity.unit_number, true)
