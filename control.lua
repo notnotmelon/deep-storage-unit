@@ -158,8 +158,8 @@ local function on_created(event)
 	}
 	storage.units[entity.unit_number] = unit_data
 
-	local stack = event.stack
-	local tags = stack and stack.valid_for_read and stack.type == "item-with-tags" and stack.tags
+	local inventory = event.consumed_items
+	local tags = event.tags or (inventory and not inventory.is_empty() and inventory[1].valid_for_read and inventory[1].is_item_with_tags and inventory[1].tags) or nil
 	if tags and tags.name then
 		unit_data.count = tags.count
 		unit_data.item = tags.name
