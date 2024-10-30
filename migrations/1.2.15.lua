@@ -1,4 +1,4 @@
-local shared = require 'shared'
+local shared = require "shared"
 
 for i, unit_data in pairs(storage.units or {}) do
 	if unit_data.lag_id and unit_data.lag_id > shared.update_slots - 1 then
