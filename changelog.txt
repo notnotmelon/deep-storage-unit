@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.0
+Date: 2024-10-30
+  Features:
+    - Added support for quality
+    - Updated for 2.0
+  Bugfixes:
+    - Allowed science packs to be inserted into memory units.
+  Changes:
+    - Updated vscode settings json for 2.0
+---------------------------------------------------------------------------------------------------
 Version: 1.5.2
 Date: 2024-08-28
   Compatibility:
