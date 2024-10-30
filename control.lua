@@ -37,7 +37,8 @@ local function update_unit_exterior(unit_data, inventory_count)
 	unit_data.previous_inventory_count = inventory_count
 	local total_count = unit_data.count + inventory_count
 
-	shared.update_combinator(unit_data.combinator, {type = "item", name = unit_data.item, quality = unit_data.quality}, total_count)
+	local signal = {type = "item", name = unit_data.item, quality = unit_data.quality or "normal"}
+	shared.update_combinator(unit_data.combinator, signal, total_count)
 	shared.update_display_text(unit_data, entity, compactify(total_count))
 	shared.update_power_usage(unit_data, total_count)
 end
@@ -168,7 +169,7 @@ local function on_created(event)
 		count = 0,
 		powersource = powersource,
 		combinator = combinator,
-		quality = nil,
+		quality = "normal",
 		inventory = entity.get_inventory(defines.inventory.chest),
 		lag_id = math.random(0, update_slots - 1)
 	}
@@ -179,6 +180,7 @@ local function on_created(event)
 	if tags and tags.name then
 		unit_data.count = tags.count
 		unit_data.item = tags.name
+		unit_data.quality = tags.quality or "normal"
 		unit_data.stack_size = prototypes.item[tags.name].stack_size
 		unit_data.comfortable = unit_data.stack_size * #unit_data.inventory / 2
 		set_filter(unit_data)
@@ -259,17 +261,19 @@ local function on_destroyed(event)
 
 	local item = unit_data.item
 	local count = unit_data.count
+	local quality = unit_data.quality or "normal"
 	local buffer = event.buffer
 
 	if buffer and item and count ~= 0 then
 		buffer.clear()
 		buffer.insert("memory-unit-with-tags")
 		local stack = buffer.find_item_stack("memory-unit-with-tags")
-		stack.tags = {name = item, count = count}
+		stack.tags = {name = item, count = count, quality = quality}
 		stack.custom_description = {
 			"item-description.memory-unit-with-tags",
 			compactify(count),
-			item
+			item,
+			quality
 		}
 	end
 end
@@ -289,10 +293,13 @@ local function pre_mined(event)
 
 	if item then
 		local inventory = unit_data.inventory
-		local in_inventory = inventory.get_item_count(item)
+		local in_inventory = inventory.get_item_count{
+			name = item,
+			quality = unit_data.quality
+		}
 
 		if in_inventory > 0 then
-			unit_data.count = unit_data.count + inventory.remove {name = item, count = in_inventory}
+			unit_data.count = unit_data.count + inventory.remove {name = item, count = in_inventory, quality = unit_data.quality}
 		end
 	end
 end
