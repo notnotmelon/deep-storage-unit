@@ -113,20 +113,8 @@ local function has_power(powersource, entity)
 	return not entity.to_be_deconstructed()
 end
 
-local basic_item_types = {["item"] = true, ["capsule"] = true, ["gun"] = true, ["rail-planner"] = true, ["module"] = true}
-local function check_for_basic_item(item)
-	--[[local items_with_metadata = storage.items_with_metadata
-	if not items_with_metadata then
-		items_with_metadata = {}
-		for item_name, prototype in pairs(prototypes.item) do
-			if not basic_item_types[prototype.type] then
-				items_with_metadata[item_name] = true
-			end
-		end
-		storage.items_with_metadata = items_with_metadata
-	end
-	return not items_with_metadata[item]--]]
-	return true
+local function is_spoilable(item)
+	return prototypes.item[item].get_spoil_ticks() ~= 0
 end
 
 local function memory_unit_corruption(unit_number, unit_data)
@@ -167,7 +155,7 @@ return {
 	update_slots = update_slots,
 	compactify = compactify,
 	open_inventory = open_inventory,
-	check_for_basic_item = check_for_basic_item,
+	is_spoilable = is_spoilable,
 	memory_unit_corruption = memory_unit_corruption,
 	validity_check = validity_check,
 	combine_tempatures = combine_tempatures

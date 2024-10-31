@@ -65,8 +65,9 @@ local function update_gui(gui, fresh_gui)
 		status = {"entity-status.no-power"}
 		img = "utility/status_not_working"
 	elseif not unit_data.item then
-		for name, _ in pairs(inventory.get_contents()) do
-			if not shared.check_for_basic_item(name) then
+		for _, itemstack in pairs(inventory.get_contents()) do
+			local name = itemstack.name
+			if shared.is_spoilable(name) then
 				status = {"entity-status.cannot-store", prototypes.item[name].localised_name}
 				img = "utility/status_not_working"
 				content_flow.electric_flow.consumption.caption = ""
@@ -219,7 +220,16 @@ end
 local function prime_unit(event, element)
 	local player = game.get_player(event.player_index)
 	local stack = player.cursor_stack
-	if not stack.valid_for_read or not shared.check_for_basic_item(stack.name) then return end
+	if not stack.valid_for_read then return end
+
+	if shared.is_spoilable(stack.name) then
+		player.create_local_flying_text {
+			text = {"entity-status.cannot-store", prototypes.item[stack.name].localised_name},
+			create_at_cursor = true,
+		}
+		return
+	end
+
 	local unit_data = storage.units[element.tags.unit_number]
 
 	unit_data.count = stack.count

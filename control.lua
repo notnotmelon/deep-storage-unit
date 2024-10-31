@@ -17,6 +17,7 @@ end
 
 script.on_init(setup)
 script.on_configuration_changed(function()
+	storage.items_with_metadata = nil
 	setup()
 
 	for unit_number, unit_data in pairs(storage.units) do
@@ -75,7 +76,7 @@ local function detect_item(unit_data)
 	local inventory = unit_data.inventory
 	for _, itemstack in pairs(inventory.get_contents()) do
 		local name, quality = itemstack.name, itemstack.quality
-		if shared.check_for_basic_item(name) then
+		if not shared.is_spoilable(name) then
 			unit_data.item = name
 			unit_data.quality = quality
 			unit_data.stack_size = prototypes.item[name].stack_size
