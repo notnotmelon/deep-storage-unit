@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.4
+Date: 2024-10-31
+  Bugfixes:
+    - Blocked spoilables from being stored in the memory unit. Resolves [#6](https://github.com/notnotmelon/deep-storage-unit/issues/6)
+---------------------------------------------------------------------------------------------------
 Version: 1.6.3
 Date: 2024-10-31
   Changes:
