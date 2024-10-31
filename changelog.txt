@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.3
+Date: 2024-10-31
+  Changes:
+    - Unpacked raw memory units can now be sent in the rocket silo. Resolves [#7](https://github.com/notnotmelon/deep-storage-unit/issues/7)
+---------------------------------------------------------------------------------------------------
 Version: 1.6.2
 Date: 2024-10-30
   Bugfixes:
