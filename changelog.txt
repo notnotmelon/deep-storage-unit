@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.7
+Date: 2024-12-06
+  Bugfixes:
+    - Fixed items sometimes being spilled. Resolves https://github.com/notnotmelon/deep-storage-unit/issues/10
+---------------------------------------------------------------------------------------------------
 Version: 1.6.6
 Date: 2024-12-06
   Bugfixes:
