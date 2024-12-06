@@ -269,19 +269,22 @@ local function on_destroyed(event)
 
 	local item = unit_data.item
 	local count = unit_data.count
-	local quality = unit_data.quality or "normal"
+	local quality = entity.quality.name
 	local buffer = event.buffer
 
 	if buffer and item and count ~= 0 then
 		buffer.clear()
-		buffer.insert("memory-unit-with-tags")
-		local stack = buffer.find_item_stack("memory-unit-with-tags")
-		stack.tags = {name = item, count = count, quality = quality}
-		stack.custom_description = {
-			"item-description.memory-unit-with-tags",
-			compactify(count),
-			item,
-			quality
+		buffer.insert{
+			name = "memory-unit-with-tags",
+			count = 1,
+			quality = quality,
+			tags = {name = item, count = count, quality = quality},
+			custom_description = {
+				"item-description.memory-unit-with-tags",
+				compactify(count),
+				item,
+				quality
+			}
 		}
 	end
 end
