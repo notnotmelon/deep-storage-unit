@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.6
+Date: 2024-12-06
+  Bugfixes:
+    - Fix quality units not being preserved. Resolves https://github.com/notnotmelon/deep-storage-unit/issues/15
+---------------------------------------------------------------------------------------------------
 Version: 1.6.5
 Date: 2024-12-06
   Bugfixes:
