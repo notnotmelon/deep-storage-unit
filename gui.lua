@@ -182,7 +182,9 @@ end)
 
 local function bulk_io(event, element)
 	local player = game.get_player(event.player_index)
+	if player.controller_type == defines.controllers.remote then return end
 	local inventory = player.get_main_inventory()
+	if not inventory then return end
 	local unit_data = storage.units[element.tags.unit_number]
 	local item = unit_data.item
 	if not item then return end
