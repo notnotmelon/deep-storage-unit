@@ -57,7 +57,7 @@ function set_filter(unit_data)
 			quality = quality
 		}
 		
-		if not inventory.set_filter(i, filter) or (stack.valid_for_read and (stack.name ~= item or stack.quality ~= quality)) then
+		if not inventory.set_filter(i, filter) or (stack.valid_for_read and (stack.name ~= item or stack.quality.name ~= quality)) then
 			entity.surface.spill_item_stack{
 				position = entity.position,
 				stack = stack,
