@@ -269,7 +269,7 @@ local function on_destroyed(event)
 
 	local item = unit_data.item
 	local count = unit_data.count
-	local quality = entity.quality.name
+	local quality = unit_data.quality
 	local buffer = event.buffer
 
 	if buffer and item and count ~= 0 then
@@ -277,7 +277,7 @@ local function on_destroyed(event)
 		buffer.insert{
 			name = "memory-unit-with-tags",
 			count = 1,
-			quality = quality,
+			quality = entity.quality.name,
 			tags = {name = item, count = count, quality = quality},
 			custom_description = {
 				"item-description.memory-unit-with-tags",
