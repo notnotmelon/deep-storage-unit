@@ -185,7 +185,7 @@ local function on_created(event)
 
 	local inventory = event.consumed_items
 	local tags = event.tags or (inventory and not inventory.is_empty() and inventory[1].valid_for_read and inventory[1].is_item_with_tags and inventory[1].tags) or nil
-	if tags and tags.name then
+	if tags and tags.name and prototypes.item[tags.name] then
 		unit_data.count = tags.count
 		unit_data.item = tags.name
 		unit_data.quality = tags.quality or "normal"
@@ -193,6 +193,9 @@ local function on_created(event)
 		unit_data.comfortable = unit_data.stack_size * #unit_data.inventory / 2
 		set_filter(unit_data)
 		update_unit(unit_data, entity.unit_number, true)
+	elseif tags and tags.name and not prototypes.item[tags.name] then
+		shared.update_power_usage(unit_data, 0)
+		game.print{"mod-gui.migrated-item", tags.count, tags.name, tags.quality or "normal"}
 	else
 		shared.update_power_usage(unit_data, 0)
 	end
