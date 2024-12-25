@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.8
+Date: 2024-12-25
+  Bugfixes:
+    - Fixed a crash when memory storage contents are deleted in a migration.
+    - Fixed quality not being perserved when the unit is mined. Resolves https://github.com/notnotmelon/deep-storage-unit/issues/21. Resolves https://github.com/notnotmelon/deep-storage-unit/issues/17
+---------------------------------------------------------------------------------------------------
 Version: 1.6.7
 Date: 2024-12-06
   Bugfixes:
